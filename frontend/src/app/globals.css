@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+:root {
+  /* ===== BRAND PRIMARY (Logo Leaf Green) ===== */
+  --color-primary: #baff68;
+  --color-primary-hover: #8fd63a;
+  --color-primary-dark: #5f8f1f;
+  --color-primary-light: #f5ffe8;
+
+  /* ===== BRAND SECONDARY (Logo Bowl Gold) ===== */
+  --color-secondary: #ffcc00;
+  --color-secondary-hover: #e6b800;
+  --color-secondary-dark: #b88a00;
+  --color-secondary-light: #fff8d6;
+
+  /* ===== NEUTRALS & SURFACES ===== */
+  --color-white: #ffffff;
+  --color-background: #fcfcfa;
+  --color-surface: #f7f9f8;
+  --color-border: #e5e7eb;
+
+  /* ===== SEMANTIC TEXT COLORS ===== */
+  --text-heading: #1f2937;
+  --text-body: #4b5563;
+  --text-muted: #6b7280;
+  --text-light: #9ca3af;
+
+  /* ===== SYSTEM STATUS ===== */
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-danger: #dc2626;
+
+  /* ===== BRAND GRADIENTS ===== */
+  --gradient-hero: linear-gradient(
+    135deg,
+    rgba(127, 191, 42, 0.88),
+    rgba(47, 79, 18, 0.82)
+  );
+  --gradient-primary: linear-gradient(135deg, #5f8f1f, #baff68);
+  --gradient-gold: linear-gradient(135deg, #ffcc00, #ffe066);
+  --gradient-section: linear-gradient(180deg, #ffffff, #f5ffe8);
+
+  /* ===== TYPOGRAPHY BASE ===== */
+  --font-size-h1: 64px;
+  --font-size-h2: 48px;
+  --font-size-h3: 36px;
+  --font-size-h4: 28px;
+  --font-size-h5: 22px;
+  --font-size-body-large: 20px;
+  --font-size-body: 18px;
+  --font-size-small: 16px;
+  --font-size-caption: 14px;
+
+  /* Font Weights */
+  --font-weight-hero: 900;
+  --font-weight-title: 700;
+  --font-weight-card: 600;
+  --font-weight-button: 500;
+  --font-weight-body: 400;
+
+  /* ===== SPACING SCALE ===== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ===== BORDER RADIUS SCALE ===== */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* ===== ELEVATION SHADOWS ===== */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+@theme {
+  /* Connect Next.js Font Variable */
+  --font-sans:
+    var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+
+  /* Colors (Enables bg-primary, text-secondary-dark, etc.) */
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-light: var(--color-primary-light);
+
+  --color-secondary: var(--color-secondary);
+  --color-secondary-hover: var(--color-secondary-hover);
+  --color-secondary-dark: var(--color-secondary-dark);
+  --color-secondary-light: var(--color-secondary-light);
+
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-border: var(--color-border);
+
+  --color-heading: var(--text-heading);
+  --color-body: var(--text-body);
+  --color-muted: var(--text-muted);
+  --color-light: var(--text-light);
+
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+
+  --background-image-gradient-hero: var(--gradient-hero);
+  --background-image-gradient-primary: var(--gradient-primary);
+  --background-image-gradient-gold: var(--gradient-gold);
+
+  /* Breakpoints */
+  --breakpoint-hero-desktop: 600px;
+  --breakpoint-nav-desktop: 1110px;
+
+  /* Animation */
+  --animate-breathe: breathe 1.8s ease-in-out infinite;
+  --animate-glow: glow 1.8s ease-in-out infinite;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+*:focus {
+  outline: none;
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--color-primary-dark);
+  outline-offset: 2px;
+}
+
+.search-input:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -2px 0 var(--color-primary-dark);
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Selected Text */
+::-moz-selection {
+  background-color: var(--color-primary);
+  color: var(--text-heading);
+}
+
+::selection {
+  background-color: var(--color-primary);
+  color: var(--text-heading);
+}
+
+/* Scrollbar */
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-primary-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-dark);
+  border-radius: 999px;
+  border: 2px solid var(--color-primary-light);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-hover);
+}
+
+/* Prevents forms autofill bacground */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: inherit !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Hide scrollbar for Chrome, Safari, Edge */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+
+html {
+  scroll-behavior: smooth;
+  /* scrollbar-gutter: stable; */
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary-dark) var(--color-primary-light);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--text-body);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* a {
+  text-decoration: none;
+} */
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.15);
+  }
+}
