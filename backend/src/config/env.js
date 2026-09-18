@@ -10,6 +10,9 @@ const required = [
   "EMAIL_FROM",
   "ADMIN_EMAIL",
   "FRONTEND_URL",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
 ];
 
 const missing = required.filter((key) => !process.env[key]?.trim());
@@ -37,4 +40,8 @@ export const env = {
   adminEmail: process.env.ADMIN_EMAIL,
 
   frontendUrl: process.env.FRONTEND_URL.replace(/\/$/, ""),
+
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
 };
