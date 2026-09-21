@@ -6,11 +6,11 @@ import { CaretUpIcon } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/app/lib/utils";
 
 function ScrollToTop() {
-  const [visible, setVisble] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     function onScroll() {
-      setVisble(window.scrollY > 500);
+      setVisible(window.scrollY > 500);
     }
 
     window.addEventListener("scroll", onScroll);
@@ -30,7 +30,7 @@ function ScrollToTop() {
       onClick={scrollTop}
       aria-label="Scroll to top"
       className={cn(
-        "fixed right-6 bottom-6 z-50 h-12 w-12 rounded-full shadow-xl transition-all duration-300",
+        "fixed right-2 bottom-6 z-50 h-12 w-12 rounded-full shadow-xl transition-all duration-300",
         visible
           ? "translate-y-0 opacity-100"
           : "pointer-events-none translate-y-4 opacity-0",
