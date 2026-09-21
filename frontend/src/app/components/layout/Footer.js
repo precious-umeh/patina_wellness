@@ -7,9 +7,11 @@ import {
   PhoneIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { usePathname } from "next/navigation";
+
 import Image from "next/image";
 import Container from "../shared/Container";
 import Link from "next/link";
+
 import { SOCIAL_CONFIG } from "@/app/data/socials";
 import { footerQuickLinks } from "@/app/data/navigations";
 import { services } from "@/app/data/services";
@@ -151,7 +153,7 @@ function Footer() {
                   <div className="bg-primary-light text-primary-dark flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
                     <PhoneIcon size={18} weight="bold" />
                   </div>
-                  {/* <span>+234 (0) 916 826 0622</span> */}
+
                   <span>{formatPhoneNumber(settings.contact.phone)}</span>
                 </a>
 
@@ -181,7 +183,7 @@ function Footer() {
       </div>
 
       {/* CopyRight Bar */}
-      <div className="border-border border-t py-6">
+      <div className="border-border nav-desktop:pb-6 border-t pt-6 pb-22">
         <Container className="text-muted flex flex-col items-center justify-center gap-2 text-center text-xs">
           <p>
             &copy; {new Date().getFullYear()} Patina Wellness Solutions. All
