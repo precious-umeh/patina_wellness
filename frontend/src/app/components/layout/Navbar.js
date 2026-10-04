@@ -6,14 +6,17 @@ import {
   ShoppingCartIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { useEffect, useState } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
-import MobileNav from "./MobileNav";
+
 import { usePathname } from "next/navigation";
 import { isActive } from "@/app/lib/navigation";
+import { navLinks } from "@/app/data/navigations";
+
+import MobileNav from "./MobileNav";
 import SearchModal from "../ui/SearchModal";
 import Button from "../shared/Button";
-import { navLinks } from "@/app/data/navigations";
 
 function Navbar() {
   const pathname = usePathname();
