@@ -190,6 +190,24 @@ function Footer() {
             rights reserved.
           </p>
 
+          <div className="flex items-center gap-3">
+            <Link
+              href="/privacy"
+              className="hover:text-primary-dark transition-colors duration-200"
+            >
+              Privacy Policy
+            </Link>
+
+            <span aria-hidden="true">•</span>
+
+            <Link
+              href="/terms"
+              className="hover:text-primary-dark transition-colors duration-200"
+            >
+              Terms & Conditions
+            </Link>
+          </div>
+
           <p>
             Developed by{" "}
             <a
