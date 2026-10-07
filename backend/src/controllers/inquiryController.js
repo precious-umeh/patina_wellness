@@ -1,10 +1,17 @@
+import mongoose from "mongoose";
 import { env } from "../config/env.js";
 import { sendEmail } from "../config/mail.js";
 
 import Inquiry from "../models/inquiry.js";
+import throwError from "../utils/throwError.js";
 
 import { getNigeriaDateOnly } from "../utils/dateUtils.js";
 import { inquiryNotificationTemplate } from "../utils/emailTemplates.js";
+import {
+  buildPaginationMeta,
+  getPaginationParams,
+} from "../utils/paginationUtils.js";
+import { escapeRegex } from "../utils/regexUtils.js";
 
 /**
  * ============================================
@@ -28,9 +35,7 @@ export async function createInquiry(req, res) {
     const { fullName, email, phone, topic, message } = req.body;
 
     if (!fullName || !email || !topic || !message) {
-      return res.status(400).json({
-        message: "Please provide all required inquiry information.",
-      });
+      throwError("Please provide all required inquiry information.", 400);
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -38,9 +43,7 @@ export async function createInquiry(req, res) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(normalizedEmail)) {
-      return res.status(400).json({
-        message: "Please provide a valid email address.",
-      });
+      throwError("Please provide a valid email address.", 400);
     }
 
     const inquiry = await Inquiry.create({
@@ -80,8 +83,8 @@ export async function createInquiry(req, res) {
       });
     }
 
-    return res.status(500).json({
-      message: "Error submitting inquiry.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Error submitting inquiry.",
     });
   }
 }
@@ -91,6 +94,103 @@ export async function createInquiry(req, res) {
  * GET ALL INQUIRIES
  * ============================================
  */
+export async function getInquiries(req, res) {
+  try {
+    const { page, limit, skip } = getPaginationParams(req.query, {
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
+
+    const search = req.query.search?.trim() || "";
+    const status = req.query.status?.trim() || "all";
+
+    const allowedStatuses = ["new", "read", "replied", "resolved"];
+
+    if (status !== "all" && !allowedStatuses.includes(status)) {
+      throwError("Invalid inquiry status filter", 400);
+    }
+
+    const filter = {};
+
+    // Status filter
+    if (status !== "all") {
+      filter.status = status;
+    }
+
+    // Search filter
+    if (search) {
+      const searchRegex = new RegExp(escapeRegex(search), "i");
+
+      filter.$or = [
+        { inquiryId: searchRegex },
+        { fullName: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex },
+        { message: searchRegex },
+        { topic: searchRegex },
+      ];
+    }
+
+    const [
+      inquiries,
+      totalMatchingInquiries,
+      totalInquiries,
+      newInquiries,
+      repliedInquiries,
+      resolvedInquiries,
+    ] = await Promise.all([
+      // Paginated inquiries
+      Inquiry.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select("-__v"),
+
+      //Total inquiries matching current search/filter
+      Inquiry.countDocuments(filter),
+
+      // Global Statistics
+      Inquiry.countDocuments(),
+
+      Inquiry.countDocuments({
+        status: "new",
+      }),
+
+      Inquiry.countDocuments({
+        status: "replied",
+      }),
+
+      Inquiry.countDocuments({
+        status: "resolved",
+      }),
+    ]);
+
+    return res.status(200).json({
+      message: "Inquiries retrived successfully.",
+      inquiries,
+      pagination: buildPaginationMeta(
+        page,
+        limit,
+        totalMatchingInquiries,
+        "totalInquiries",
+      ),
+      stats: {
+        total: totalInquiries,
+        new: newInquiries,
+        replied: repliedInquiries,
+        resolved: resolvedInquiries,
+      },
+    });
+  } catch (error) {
+    console.error("Get Inquiries  Error:", error);
+
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Error retrieving inquiries.",
+    });
+  }
+}
+
+/*
 export async function getInquiries(req, res) {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
@@ -200,6 +300,7 @@ export async function getInquiries(req, res) {
     });
   }
 }
+*/
 
 /**
  * ============================================
@@ -247,12 +348,14 @@ export async function getInquiry(req, res) {
   try {
     const { id } = req.params;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid inquiry ID", 400);
+    }
+
     const inquiry = await Inquiry.findById(id).select("-__v");
 
     if (!inquiry) {
-      return res.status(404).json({
-        message: "Inquiry not found.",
-      });
+      throwError("Inquiry not found", 404);
     }
 
     return res.status(200).json({
@@ -262,8 +365,8 @@ export async function getInquiry(req, res) {
   } catch (error) {
     console.error("Get Inquiry Error:", error);
 
-    return res.status(500).json({
-      message: "Error retrieving inquiry.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Error retrieving inquiry.",
     });
   }
 }
@@ -278,26 +381,24 @@ export async function updateInquiry(req, res) {
     const { id } = req.params;
     const { status, adminNotes } = req.body;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid inquiry ID", 400);
+    }
+
     const allowedStatuses = ["new", "read", "replied", "resolved"];
 
     if (!status) {
-      return res.status(400).json({
-        message: "Inquiry status is required.",
-      });
+      throwError("Inquiry status is required", 404);
     }
 
     if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid inquiry status",
-      });
+      throwError("Invalid inquiry status", 400);
     }
 
     const inquiry = await Inquiry.findById(id);
 
     if (!inquiry) {
-      return res.status(404).json({
-        message: "Inquiry not found.",
-      });
+      throwError("Inquiry not found", 404);
     }
 
     // Update inquiry status
@@ -305,6 +406,10 @@ export async function updateInquiry(req, res) {
 
     // Update admin notes if provided
     if (adminNotes !== undefined) {
+      if (typeof adminNotes !== "string") {
+        throwError("Admin notes must be a string", 400);
+      }
+
       inquiry.adminNotes = adminNotes.trim();
     }
 
@@ -317,8 +422,8 @@ export async function updateInquiry(req, res) {
   } catch (error) {
     console.error("Update Inquiry Error:", error);
 
-    return res.status(500).json({
-      message: "Error updating inquiry.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Error updating inquiry.",
     });
   }
 }
@@ -332,15 +437,17 @@ export async function deleteInquiry(req, res) {
   try {
     const { id } = req.params;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid inquiry ID", 400);
+    }
+
     const inquiry = await Inquiry.findById(id);
 
     if (!inquiry) {
-      return res.status(404).json({
-        message: "Inquiry not found.",
-      });
+      throwError("Inquiry not found", 404);
     }
 
-    await Inquiry.findByIdAndDelete(id);
+    await inquiry.deleteOne();
 
     return res.status(200).json({
       message: "Inquiry deleted successfully.",
@@ -348,8 +455,8 @@ export async function deleteInquiry(req, res) {
   } catch (error) {
     console.error("Delete Inquiry Error:", error);
 
-    return res.status(500).json({
-      message: "Error deleting inquiry.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Error deleting inquiry.",
     });
   }
 }

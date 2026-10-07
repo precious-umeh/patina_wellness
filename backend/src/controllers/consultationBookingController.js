@@ -1,9 +1,11 @@
+import mongoose from "mongoose";
 import { env } from "../config/env.js";
 import { sendEmail } from "../config/mail.js";
 
 import ConsultationBooking from "../models/consultation.js";
 import ConsultationAvailability from "../models/consultationAvailability.js";
 import ConsultationBlockedDate from "../models/consultationBlockedDate.js";
+import throwError from "../utils/throwError.js";
 
 import {
   getDayOfWeek,
@@ -11,6 +13,11 @@ import {
   isValidDateOnly,
 } from "../utils/dateUtils.js";
 import { bookingNotificationTemplate } from "../utils/emailTemplates.js";
+import {
+  buildPaginationMeta,
+  getPaginationParams,
+} from "../utils/paginationUtils.js";
+import { escapeRegex } from "../utils/regexUtils.js";
 
 const generateBookingId = function () {
   const date = getNigeriaDateOnly().replace(/-/g, "");
@@ -57,15 +64,11 @@ export async function createBooking(req, res) {
       !gender ||
       !primaryConcern
     ) {
-      return res.status(400).json({
-        message: "Please provide all required booking information.",
-      });
+      throwError("Please provide all required booking information.", 400);
     }
 
     if (consent !== true) {
-      return res.status(400).json({
-        message: "Consent is required before submitting a booking.",
-      });
+      throwError("Consent is required before submitting a booking.", 400);
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -73,45 +76,33 @@ export async function createBooking(req, res) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(normalizedEmail)) {
-      return res.status(400).json({
-        message: "Please provide a valid email address.",
-      });
+      throwError("Please provide a valid email address.", 400);
     }
 
     if (!["virtual", "physical"].includes(appointmentType)) {
-      return res.status(400).json({
-        message: "Invalid appointment type.",
-      });
+      throwError("Invalid appointment type.", 400);
     }
 
     if (!isValidDateOnly(appointmentDate)) {
-      return res.status(400).json({
-        message: "Invalid appointment date. Use YYYY-MM-DD.",
-      });
+      throwError("Invalid appointment date. Use YYYY-MM-DD", 400);
     }
 
     const today = getNigeriaDateOnly();
 
     if (appointmentDate < today) {
-      return res.status(400).json({
-        message: "Consultation dates cannot be in the past.",
-      });
+      throwError("Consultation dates cannot be in the past.", 400);
     }
 
     const availability = await ConsultationAvailability.findOne();
 
     if (!availability || !availability.isActive) {
-      return res.status(409).json({
-        message: "Consultation bookings are currently unavailable.",
-      });
+      throwError("Consultation bookings are currently unavailable.", 409);
     }
 
     const dayOfWeek = getDayOfWeek(appointmentDate);
 
     if (!availability.workingDays.includes(dayOfWeek)) {
-      return res.status(409).json({
-        message: "Consultations are not available on this day.",
-      });
+      throwError("Consultations are not available on this day.", 409);
     }
 
     const blockedDate = await ConsultationBlockedDate.findOne({
@@ -120,16 +111,14 @@ export async function createBooking(req, res) {
     });
 
     if (blockedDate) {
-      return res.status(409).json({
-        message:
-          blockedDate.reason || "Consultations are not available on this date.",
-      });
+      throwError(
+        blockedDate.reason || "Consultations are not available on this date.",
+        409,
+      );
     }
 
     if (!availability.timeSlots.includes(appointmentTime)) {
-      return res.status(409).json({
-        message: "The selected appointment time is not available.",
-      });
+      throwError("The selected appointment time is not available", 409);
     }
 
     const existingBooking = await ConsultationBooking.findOne({
@@ -139,9 +128,7 @@ export async function createBooking(req, res) {
     });
 
     if (existingBooking) {
-      return res.status(409).json({
-        message: "This appointment slot is no longer available.",
-      });
+      throwError("This appointment slot is no longer available", 409);
     }
 
     const booking = await ConsultationBooking.create({
@@ -211,8 +198,10 @@ export async function createBooking(req, res) {
       });
     }
 
-    return res.status(500).json({
-      message: "Error creating consultation booking.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode
+        ? error.message
+        : "Error creating consultation booking.",
     });
   }
 }
@@ -224,9 +213,10 @@ export async function createBooking(req, res) {
  */
 export async function getBookings(req, res) {
   try {
-    const page = Math.max(Number(req.query.page) || 1, 1);
-
-    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+    const { page, limit, skip } = getPaginationParams(req.query, {
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
 
     const search = req.query.search?.trim() || "";
     const status = req.query.status?.trim() || "all";
@@ -241,24 +231,20 @@ export async function getBookings(req, res) {
 
     // Validate Status
     if (status !== "all" && !allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid booking status filter.",
-      });
+      throwError("Invalid booking status filter", 400);
     }
 
     // Build MongoDB filter
     const filter = {};
 
+    // Status filter
     if (status !== "all") {
       filter.status = status;
     }
 
     // Search across relevant fields
     if (search) {
-      const searchRegex = new RegExp(
-        search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-        "i",
-      );
+      const searchRegex = new RegExp(escapeRegex(search), "i");
 
       filter.$or = [
         { fullName: searchRegex },
@@ -268,8 +254,6 @@ export async function getBookings(req, res) {
         { "selectedService.name": searchRegex },
       ];
     }
-
-    const skip = (page - 1) * limit;
 
     const [
       bookings,
@@ -305,21 +289,17 @@ export async function getBookings(req, res) {
       }),
     ]);
 
-    const totalPages = Math.max(Math.ceil(totalMatchingBookings / limit), 1);
-
     return res.status(200).json({
       message: "Bookings retrieved successfully.",
 
       bookings,
 
-      pagination: {
-        currentPage: page,
-        pageSize: limit,
-        totalBookings: totalMatchingBookings,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
+      pagination: buildPaginationMeta(
+        page,
+        limit,
+        totalMatchingBookings,
+        "totalBookings",
+      ),
 
       stats: {
         total: totalBookings,
@@ -331,8 +311,10 @@ export async function getBookings(req, res) {
   } catch (error) {
     console.error("Get Bookings Error:", error);
 
-    return res.status(500).json({
-      message: "Error retrieving consultation bookings.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode
+        ? error.message
+        : "Error retrieving consultation bookings.",
     });
   }
 }
@@ -383,12 +365,14 @@ export async function getBooking(req, res) {
   try {
     const { id } = req.params;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid booking ID", 400);
+    }
+
     const booking = await ConsultationBooking.findById(id).select("-__v");
 
     if (!booking) {
-      return res.status(404).json({
-        message: "Booking not found.",
-      });
+      throwError("Booking not found", 404);
     }
 
     return res.status(200).json({
@@ -398,8 +382,8 @@ export async function getBooking(req, res) {
   } catch (error) {
     console.error("Get Booking Error:", error);
 
-    return res.status(500).json({
-      message: "Error retrieving booking.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Error retrieving booking.",
     });
   }
 }
@@ -414,6 +398,10 @@ export async function updateBooking(req, res) {
     const { id } = req.params;
     const { status, adminNotes } = req.body;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid booking ID", 400);
+    }
+
     const allowedStatuses = [
       "pending",
       "contacted",
@@ -423,23 +411,17 @@ export async function updateBooking(req, res) {
     ];
 
     if (!status) {
-      return res.status(400).json({
-        message: "Booking status is required.",
-      });
+      throwError("Booking status is required", 400);
     }
 
     if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid booking status.",
-      });
+      throwError("Invalid booking status.", 400);
     }
 
     const booking = await ConsultationBooking.findById(id);
 
     if (!booking) {
-      return res.status(404).json({
-        message: "Booking not found.",
-      });
+      throwError("Booking not found", 404);
     }
 
     // Update booking status
@@ -454,6 +436,10 @@ export async function updateBooking(req, res) {
 
     // Update admin notes if provided
     if (adminNotes !== undefined) {
+      if (typeof adminNotes !== "string") {
+        throwError("Admin notes must be a string", 400);
+      }
+
       booking.adminNotes = adminNotes.trim();
     }
 
@@ -466,8 +452,8 @@ export async function updateBooking(req, res) {
   } catch (error) {
     console.error("Update Booking Error:", error);
 
-    return res.status(500).json({
-      message: "Error updating booking.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Error updating booking.",
     });
   }
 }
@@ -481,15 +467,17 @@ export async function deleteBooking(req, res) {
   try {
     const { id } = req.params;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid booking ID", 400);
+    }
+
     const booking = await ConsultationBooking.findById(id);
 
     if (!booking) {
-      return res.status(404).json({
-        message: "Booking not found.",
-      });
+      throwError("Booking not found", 404);
     }
 
-    await ConsultationBooking.findByIdAndDelete(id);
+    await booking.deleteOne();
 
     return res.status(200).json({
       message: "Consultation booking deleted successfully.",
@@ -497,8 +485,10 @@ export async function deleteBooking(req, res) {
   } catch (error) {
     console.error("Delete Booking Error:", error);
 
-    return res.status(500).json({
-      message: "Error deleting consultation booking.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode
+        ? error.message
+        : "Error deleting consultation booking.",
     });
   }
 }

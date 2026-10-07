@@ -1,10 +1,17 @@
+import mongoose from "mongoose";
 import { env } from "../config/env.js";
 import { sendEmail } from "../config/mail.js";
 
 import PartnershipApplication from "../models/partnership.js";
+import throwError from "../utils/throwError.js";
 
 import { getNigeriaDateOnly } from "../utils/dateUtils.js";
 import { partnershipNotificationTemplate } from "../utils/emailTemplates.js";
+import {
+  buildPaginationMeta,
+  getPaginationParams,
+} from "../utils/paginationUtils.js";
+import { escapeRegex } from "../utils/regexUtils.js";
 
 /**
  * ========================================
@@ -49,35 +56,29 @@ export async function createPartnership(req, res) {
       !partnershipGoals ||
       !preferredContactMethod
     ) {
-      return res.status(400).json({
-        message: "Please provide all required partnership information.",
-      });
+      throwError("Please provide all required partnership information.", 400);
     }
 
     // Validate Partnership Type
     const allowedPartnershipTypes = ["corporate", "practitioner", "ambassador"];
 
     if (!allowedPartnershipTypes.includes(partnershipType)) {
-      return res.status(400).json({
-        message: "Invalid partnership type.",
-      });
+      throwError("Invalid partnership type.", 400);
     }
 
     // Validate Contact Method
     const allowedContactMethods = ["Email", "WhatsApp", "Phone Call"];
 
     if (!allowedContactMethods.includes(preferredContactMethod)) {
-      return res.status(400).json({
-        message: "Invalid preferred contact method.",
-      });
+      throwError("Invalid preferred contact method", 400);
     }
 
     // Validate Consent
     if (consent !== true) {
-      return res.status(400).json({
-        message:
-          "Consent is required before submitting a partnership application.",
-      });
+      throwError(
+        "Consent is required before submitting a partnership application.",
+        400,
+      );
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -85,9 +86,7 @@ export async function createPartnership(req, res) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(normalizedEmail)) {
-      return res.status(400).json({
-        message: "Please provide a valid email address.",
-      });
+      throwError("Please provide a valid email address", 400);
     }
 
     /**
@@ -96,10 +95,10 @@ export async function createPartnership(req, res) {
     // Corporate
     if (partnershipType === "corporate") {
       if (!organisationName?.trim() || !industry?.trim() || !companySize) {
-        return res.status(400).json({
-          message:
-            "Please provide all required corporate partnership information.",
-        });
+        throwError(
+          "Please provide all required corporate partnership information.",
+          400,
+        );
       }
 
       const allowedCompanySizes = [
@@ -111,33 +110,25 @@ export async function createPartnership(req, res) {
       ];
 
       if (!allowedCompanySizes.includes(companySize)) {
-        return res.status(400).json({
-          message: "Invalid company size.",
-        });
+        throwError("Invalid company size", 400);
       }
     }
 
     // Practitioner
     if (partnershipType === "practitioner") {
       if (!areaOfSpecialty?.trim()) {
-        return res.status(400).json({
-          message: "Please provide your area of practice or specialty.",
-        });
+        throwError("Please provide your area of practice or specialty", 400);
       }
 
       if (!websiteOrSocial?.trim()) {
-        return res.status(400).json({
-          message: "Please provide your website or social media handle.",
-        });
+        throwError("Please provide your website or social media handle.", 400);
       }
     }
 
     // Ambassador
     if (partnershipType === "ambassador") {
       if (!websiteOrSocial?.trim()) {
-        return res.status(400).json({
-          message: "Please provide your website or social media handle.",
-        });
+        throwError("Please provide your website or social media handle.", 400);
       }
     }
 
@@ -216,8 +207,10 @@ export async function createPartnership(req, res) {
       });
     }
 
-    return res.status(500).json({
-      message: "Error submitting partnership application.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode
+        ? error.message
+        : "Error submitting partnership application.",
     });
   }
 }
@@ -229,9 +222,10 @@ export async function createPartnership(req, res) {
  */
 export async function getPartnerships(req, res) {
   try {
-    const page = Math.max(Number(req.query.page) || 1, 1);
-
-    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+    const { page, limit, skip } = getPaginationParams(req.query, {
+      defaultLimit: 20,
+      maxLimit: 100,
+    });
 
     const search = req.query.search?.trim() || "";
     const status = req.query.status?.trim() || "all";
@@ -247,9 +241,7 @@ export async function getPartnerships(req, res) {
 
     // Validate Status
     if (status !== "all" && !allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid partnership application status filter.",
-      });
+      throwError("Invalid partnership application status filter.", 400);
     }
 
     // Build MongoDB filter
@@ -261,10 +253,7 @@ export async function getPartnerships(req, res) {
 
     // Search across relevant fields
     if (search) {
-      const searchRegex = new RegExp(
-        search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-        "i",
-      );
+      const searchRegex = new RegExp(escapeRegex(search), "i");
 
       filter.$or = [
         { applicationId: searchRegex },
@@ -278,8 +267,6 @@ export async function getPartnerships(req, res) {
         { partnershipType: searchRegex },
       ];
     }
-
-    const skip = (page - 1) * limit;
 
     const [
       applications,
@@ -315,24 +302,17 @@ export async function getPartnerships(req, res) {
       }),
     ]);
 
-    const totalPages = Math.max(
-      Math.ceil(totalMatchingApplications / limit),
-      1,
-    );
-
     return res.status(200).json({
       message: "Partnership applications retrieved successfully.",
 
       applications,
 
-      pagination: {
-        currentPage: page,
-        pageSize: limit,
-        totalApplications: totalMatchingApplications,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
+      pagination: buildPaginationMeta(
+        page,
+        limit,
+        totalMatchingApplications,
+        "totalApplications",
+      ),
 
       stats: {
         total: totalApplications,
@@ -344,8 +324,10 @@ export async function getPartnerships(req, res) {
   } catch (error) {
     console.error("Get Partnerships Error:", error);
 
-    return res.status(500).json({
-      message: "Error retrieving partnership applications.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode
+        ? error.message
+        : "Error retrieving partnership applications.",
     });
   }
 }
@@ -396,13 +378,15 @@ export async function getPartnership(req, res) {
   try {
     const { id } = req.params;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid partnership application ID", 400);
+    }
+
     const application =
       await PartnershipApplication.findById(id).select("-__v");
 
     if (!application) {
-      return res.status(404).json({
-        message: "Partnership application not found.",
-      });
+      throwError("Partnership application not found", 404);
     }
 
     return res.status(200).json({
@@ -412,8 +396,10 @@ export async function getPartnership(req, res) {
   } catch (error) {
     console.error("Get Partnership Error:", error);
 
-    return res.status(500).json({
-      message: "Error retrieving partnership application.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode
+        ? error.message
+        : "Error retrieving partnership application.",
     });
   }
 }
@@ -428,6 +414,10 @@ export async function updatePartnership(req, res) {
     const { id } = req.params;
     const { status, adminNotes } = req.body;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid partnership application ID", 400);
+    }
+
     const allowedStatuses = [
       "new",
       "contacted",
@@ -438,28 +428,26 @@ export async function updatePartnership(req, res) {
     ];
 
     if (!status) {
-      return res.status(400).json({
-        message: "Partnership application status is required.",
-      });
+      throwError("Partnership application status is required.", 400);
     }
 
     if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid partnership application status.",
-      });
+      throwError("Invalid partnership application status.", 400);
     }
 
     const application = await PartnershipApplication.findById(id);
 
     if (!application) {
-      return res.status(404).json({
-        message: "Partnership application not found.",
-      });
+      throwError("Partnership application not found.", 404);
     }
 
     application.status = status;
 
     if (adminNotes !== undefined) {
+      if (typeof adminNotes !== "string") {
+        throwError("Admin notes must be a string", 400);
+      }
+
       application.adminNotes = adminNotes.trim();
     }
 
@@ -472,8 +460,10 @@ export async function updatePartnership(req, res) {
   } catch (error) {
     console.error("Update Partnership Error:", error);
 
-    return res.status(500).json({
-      message: "Error updating partnership application.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode
+        ? error.message
+        : "Error updating partnership application.",
     });
   }
 }
@@ -487,15 +477,17 @@ export async function deletePartnership(req, res) {
   try {
     const { id } = req.params;
 
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid partnership application ID", 400);
+    }
+
     const application = await PartnershipApplication.findById(id);
 
     if (!application) {
-      return res.status(404).json({
-        message: "Partnership application not found.",
-      });
+      throwError("Partnership application not found.", 404);
     }
 
-    await PartnershipApplication.findByIdAndDelete(id);
+    await application.deletOne();
 
     return res.status(200).json({
       message: "Partnership application deleted successfully.",
@@ -503,8 +495,10 @@ export async function deletePartnership(req, res) {
   } catch (error) {
     console.error("Deleting Partnership Error:", error);
 
-    return res.status(500).json({
-      message: "Error deleting partnership application.",
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode
+        ? error.message
+        : "Error deleting partnership application.",
     });
   }
 }
