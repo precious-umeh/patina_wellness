@@ -12,6 +12,8 @@ import inquiryRoutes from "./routes/inquiryRoutes.js";
 
 import partnershipRoutes from "./routes/partnershipRoutes.js";
 
+import productRoutes from "./routes/productRoutes.js";
+
 import testRoutes from "./routes/testRoutes.js";
 
 const server = express();
@@ -29,6 +31,8 @@ server.use("/api", generalSettingsRoutes);
 server.use("/api", inquiryRoutes);
 
 server.use("/api", partnershipRoutes);
+
+server.use("/api", productRoutes);
 
 server.use("/test", testRoutes);
 
