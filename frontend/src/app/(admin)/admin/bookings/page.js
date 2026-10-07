@@ -3,6 +3,7 @@
 import {
   ArrowClockwiseIcon,
   CalendarCheckIcon,
+  CaretDownIcon,
   CheckCircleIcon,
   ClockIcon,
   EyeIcon,
@@ -38,6 +39,9 @@ function AdminBookingsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalBookings, setTotalBookings] = useState(0);
+  const [bookingsPerPage, setBookingsPerPage] = useState(20);
+
+  const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
   const [bookingStats, setBookingStats] = useState({
     total: 0,
@@ -55,8 +59,6 @@ function AdminBookingsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [refreshKey, setRefreshKey] = useState(0);
-
-  const BOOKINGS_PER_PAGE = 20;
 
   /**
    * ========================================
@@ -86,7 +88,7 @@ function AdminBookingsPage() {
       try {
         const data = await getBookings(
           currentPage,
-          BOOKINGS_PER_PAGE,
+          bookingsPerPage,
           debouncedSearchQuery,
           statusFilter,
         );
@@ -126,7 +128,13 @@ function AdminBookingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentPage, debouncedSearchQuery, statusFilter, refreshKey]);
+  }, [
+    currentPage,
+    bookingsPerPage,
+    debouncedSearchQuery,
+    statusFilter,
+    refreshKey,
+  ]);
 
   /**
    * ========================================
@@ -143,6 +151,11 @@ function AdminBookingsPage() {
     if (currentPage <= 1 || loading) return;
 
     setCurrentPage((currentPage) => currentPage - 1);
+  };
+
+  const handlePagesSizeChange = function (e) {
+    setBookingsPerPage(Number(e.target.value));
+    setCurrentPage(1);
   };
 
   /**
@@ -580,16 +593,48 @@ function AdminBookingsPage() {
               <p className="text-muted text-[11px]">
                 Showing{" "}
                 <span className="text-heading font-bold">
-                  {(currentPage - 1) * BOOKINGS_PER_PAGE + 1}
+                  {(currentPage - 1) * bookingsPerPage + 1}
                 </span>
                 {" - "}
                 <span className="text-heading font-bold">
-                  {Math.min(currentPage * BOOKINGS_PER_PAGE, totalBookings)}
+                  {Math.min(currentPage * bookingsPerPage, totalBookings)}
                 </span>{" "}
                 of{" "}
                 <span className="text-heading font-bold">{totalBookings}</span>{" "}
                 bookings
               </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="bookings-page-size"
+                    className="text-muted text-[11px] font-medium"
+                  >
+                    Rows per page
+                  </label>
+
+                  <div className="relative">
+                    <select
+                      id="bookings-page-size"
+                      value={bookingsPerPage}
+                      onChange={handlePagesSizeChange}
+                      className="border-border bg-background text-heading focus:border-primary-dark focus:ring-primary-dark/20 h-8 appearance-none rounded-lg border pr-8 pl-2 text-[11px] font-semibold outline-none focus:ring-2"
+                    >
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+
+                    <CaretDownIcon
+                      size={13}
+                      weight="bold"
+                      className="text-muted pointer-events-none absolute top-1/2 right-2 -translate-y-1/2"
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div className="flex items-center gap-2">
                 <Button

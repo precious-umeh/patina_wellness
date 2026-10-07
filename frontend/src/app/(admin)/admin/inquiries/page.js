@@ -2,6 +2,7 @@
 
 import {
   ArrowClockwiseIcon,
+  CaretDownIcon,
   ChatCircleTextIcon,
   CheckCircleIcon,
   ClockIcon,
@@ -41,6 +42,9 @@ function AdminInquiriesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalInquiries, setTotalInquiries] = useState(0);
+  const [inquiriesPerPage, setInquiriesPerPage] = useState(20);
+
+  const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
   const [inquiryStats, setInquiryStats] = useState({
     total: 0,
@@ -58,8 +62,6 @@ function AdminInquiriesPage() {
 
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [isInquiryModalOpen, setIsInquiryModalopen] = useState(false);
-
-  const INQUIRIES_PER_PAGE = 20;
 
   /**
    * ========================================
@@ -90,7 +92,7 @@ function AdminInquiriesPage() {
       try {
         const data = await getInquiries(
           currentPage,
-          INQUIRIES_PER_PAGE,
+          inquiriesPerPage,
           debouncedSearchQuery,
           statusFilter,
         );
@@ -129,7 +131,13 @@ function AdminInquiriesPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentPage, debouncedSearchQuery, statusFilter, refreshKey]);
+  }, [
+    currentPage,
+    inquiriesPerPage,
+    debouncedSearchQuery,
+    statusFilter,
+    refreshKey,
+  ]);
 
   /**
    * ========================================
@@ -146,6 +154,11 @@ function AdminInquiriesPage() {
     if (currentPage <= 1 || loading) return;
 
     setCurrentPage((currentPage) => currentPage - 1);
+  };
+
+  const handlePagesSizeChange = function (e) {
+    setInquiriesPerPage(Number(e.target.value));
+    setCurrentPage(1);
   };
 
   /**
@@ -547,16 +560,48 @@ function AdminInquiriesPage() {
               <p className="text-muted text-[11px]">
                 Showing{" "}
                 <span className="text-heading font-bold">
-                  {(currentPage - 1) * INQUIRIES_PER_PAGE + 1}
+                  {(currentPage - 1) * inquiriesPerPage + 1}
                 </span>
                 {" - "}
                 <span className="text-heading font-bold">
-                  {Math.min(currentPage * INQUIRIES_PER_PAGE, totalInquiries)}
+                  {Math.min(currentPage * inquiriesPerPage, totalInquiries)}
                 </span>{" "}
                 of{" "}
                 <span className="text-heading font-bold">{totalInquiries}</span>{" "}
                 inquiries
               </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="inquiries-page-size"
+                    className="text-muted text-[11px] font-medium"
+                  >
+                    Rows per page
+                  </label>
+
+                  <div className="relative">
+                    <select
+                      id="inquiries-page-size"
+                      value={inquiriesPerPage}
+                      onChange={handlePagesSizeChange}
+                      className="border-border bg-background text-heading focus:border-primary-dark focus:ring-primary-dark/20 h-8 appearance-none rounded-lg border pr-8 pl-2 text-[11px] font-semibold outline-none focus:ring-2"
+                    >
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+
+                    <CaretDownIcon
+                      size={13}
+                      weight="bold"
+                      className="text-muted pointer-events-none absolute top-1/2 right-2 -translate-y-1/2"
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div className="flex items-center gap-2">
                 <Button

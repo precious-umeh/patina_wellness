@@ -2,6 +2,7 @@
 
 import {
   ArrowClockwiseIcon,
+  CaretDownIcon,
   CheckCircleIcon,
   ClockIcon,
   EyeIcon,
@@ -39,6 +40,9 @@ function AdminPartnershipsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalApplications, setTotalApplications] = useState(0);
+  const [applicationsPerPage, setApplicationsPerPage] = useState(20);
+
+  const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
   const [partnershipStats, setPartnershipStats] = useState({
     total: 0,
@@ -56,8 +60,6 @@ function AdminPartnershipsPage() {
 
   const [selectedPartnership, setSelectedPartnership] = useState(null);
   const [isPartnershipModalOpen, setIsPartnershipModalOpen] = useState(false);
-
-  const APPLICATIONS_PER_PAGE = 20;
 
   /**
    * ========================================
@@ -87,7 +89,7 @@ function AdminPartnershipsPage() {
       try {
         const data = await getPartnerships(
           currentPage,
-          APPLICATIONS_PER_PAGE,
+          applicationsPerPage,
           debouncedSearchQuery,
           statusFilter,
         );
@@ -127,7 +129,13 @@ function AdminPartnershipsPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentPage, debouncedSearchQuery, statusFilter, refreshKey]);
+  }, [
+    currentPage,
+    applicationsPerPage,
+    debouncedSearchQuery,
+    statusFilter,
+    refreshKey,
+  ]);
 
   /**
    * ========================================
@@ -144,6 +152,11 @@ function AdminPartnershipsPage() {
     if (currentPage <= 1 || loading) return;
 
     setCurrentPage((currentPage) => currentPage - 1);
+  };
+
+  const handlePagesSizeChange = function (e) {
+    setApplicationsPerPage(Number(e.target.value));
+    setCurrentPage(1);
   };
 
   /**
@@ -581,12 +594,12 @@ function AdminPartnershipsPage() {
               <p className="text-muted text-[11px]">
                 Showing{" "}
                 <span className="text-heading font-bold">
-                  {(currentPage - 1) * APPLICATIONS_PER_PAGE + 1}
+                  {(currentPage - 1) * applicationsPerPage + 1}
                 </span>
                 {" - "}
                 <span className="text-heading font-bold">
                   {Math.min(
-                    currentPage * APPLICATIONS_PER_PAGE,
+                    currentPage * applicationsPerPage,
                     totalApplications,
                   )}
                 </span>{" "}
@@ -596,6 +609,38 @@ function AdminPartnershipsPage() {
                 </span>{" "}
                 applications
               </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="applications-page-size"
+                    className="text-muted text-[11px] font-medium"
+                  >
+                    Rows per page
+                  </label>
+
+                  <div className="relative">
+                    <select
+                      id="applications-page-size"
+                      value={applicationsPerPage}
+                      onChange={handlePagesSizeChange}
+                      className="border-border bg-background text-heading focus:border-primary-dark focus:ring-primary-dark/20 h-8 appearance-none rounded-lg border pr-8 pl-2 text-[11px] font-semibold outline-none focus:ring-2"
+                    >
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+
+                    <CaretDownIcon
+                      size={13}
+                      weight="bold"
+                      className="text-muted pointer-events-none absolute top-1/2 right-2 -translate-y-1/2"
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div className="flex items-center gap-2">
                 <Button
