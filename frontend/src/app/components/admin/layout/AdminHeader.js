@@ -1,12 +1,14 @@
 "use client";
 
-import { useAuth } from "@/app/providers/AuthProvider";
+import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowSquareOutIcon,
   ListIcon,
   UserCircleIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import Link from "next/link";
+
+import { useAuth } from "@/app/providers/AuthProvider";
 
 function AdminHeader({ onOpenSidebar }) {
   const { user } = useAuth();
@@ -43,11 +45,24 @@ function AdminHeader({ onOpenSidebar }) {
           href="/admin/profile"
           className="border-border inline-flex items-center gap-2.5 border-l pl-4"
         >
-          <div className="bg-primary-light text-primary-dark flex h-8 w-8 items-center justify-center rounded-full font-bold">
-            {user?.name ? (
-              user.name.charAt(0).toUpperCase()
+          <div className="border-border relative h-8 w-8 shrink-0 overflow-hidden rounded-full border">
+            {user?.avatar ? (
+              <Image
+                src={user.avatar}
+                alt={user?.name || "Admin avatar"}
+                fill
+                unoptimized
+                sizes="32px"
+                className="object-cover"
+              />
             ) : (
-              <UserCircleIcon size={22} weight="duotone" />
+              <div className="bg-primary-light text-primary-dark flex h-full w-full items-center justify-center font-bold">
+                {user?.name ? (
+                  user.name.charAt(0).toUpperCase()
+                ) : (
+                  <UserCircleIcon size={18} weight="duotone" />
+                )}
+              </div>
             )}
           </div>
 
