@@ -1,17 +1,21 @@
 "use client";
 
+import { useRef, useState } from "react";
 import {
+  CameraIcon,
   CheckCircleIcon,
   EnvelopeIcon,
   EyeIcon,
   EyeSlashIcon,
+  ImageIcon,
   LockKeyIcon,
   PaperPlaneTiltIcon,
   ShieldCheckIcon,
+  TrashIcon,
+  XIcon,
   UserCircleIcon,
   UserIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { useState } from "react";
 
 import Button from "@/app/components/shared/Button";
 import Container from "@/app/components/shared/Container";
@@ -22,6 +26,8 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import Reveal from "@/app/components/animations/Reveal";
 import Stagger from "@/app/components/animations/Stagger";
 import StaggerItem from "@/app/components/animations/StaggerItem";
+import Image from "next/image";
+import DeleteConfirmationModal from "@/app/components/shared/DeleteConfirmationModal";
 
 function AdminProfilePage() {
   const {
@@ -36,8 +42,11 @@ function AdminProfilePage() {
 
   // Personal Info Form State
   const [name, setName] = useState(user?.name || "");
-  const [avatar, setAvatar] = useState(user.avatar || "");
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || "");
   const [profileStatus, setProfileStatus] = useState({ type: "", text: "" });
+
+  const fileInputRef = useRef(null);
 
   // Change Email Form State
   const [newEmail, setNewEmail] = useState("");
@@ -52,20 +61,33 @@ function AdminProfilePage() {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState({ type: "", text: "" });
 
-  // Handle Name Update
+  const [showRemoveAvatarModal, setShowRemoveAvatarModal] = useState(false);
+  const [shouldRemoveAvatar, setShouldRemoveAvatar] = useState(false);
+
+  // Handle Name & Avatar Update
   const handleProfileSubmit = async function (e) {
     e.preventDefault();
     setProfileStatus({ type: "", text: "" });
 
     const formData = new FormData();
     formData.append("name", name);
-    formData.append("avatar", avatar);
+
+    if (avatarFile) {
+      formData.append("avatar", avatarFile);
+    }
+
+    if (shouldRemoveAvatar) {
+      formData.append("removeAvatar", "true");
+    }
 
     const result = await updateProfile(formData);
 
     if (result?.success) {
+      setAvatarFile(null);
+      setShouldRemoveAvatar(false);
+      setAvatarPreview(result.user?.avatar ?? "");
       setProfileStatus({
-        type: success,
+        type: "success",
         text: result.message || "Profile updated successfully!",
       });
     } else {
@@ -74,6 +96,24 @@ function AdminProfilePage() {
         text: result?.message || "Failed to update profile.",
       });
     }
+  };
+
+  // Handle Avatar File Selection
+  const handleAvatarChange = function (e) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  // Handle Remove Avatar
+  const handleConfirmRemoveAvatar = function () {
+    setShouldRemoveAvatar(true);
+    setAvatarFile(null);
+    setAvatarPreview("");
+    setShowRemoveAvatarModal(false);
   };
 
   // Handle Request Email Change
@@ -94,7 +134,7 @@ function AdminProfilePage() {
 
     if (result?.success) {
       setEmailStatus({
-        type: success,
+        type: "success",
         text: result.message,
       });
 
@@ -163,11 +203,24 @@ function AdminProfilePage() {
       {/* User Badge Overview Card */}
       <Reveal delay={0.12}>
         <div className="border-border bg-surface flex flex-col items-center gap-6 rounded-xl border p-6 shadow-2xs sm:flex-row">
-          <div className="bg-primary-light text-primary-dark flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-extrabold">
-            {user?.name ? (
-              user.name.charAt(0).toUpperCase()
+          <div className="border-border relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2">
+            {user?.avatar ? (
+              <Image
+                src={user.avatar}
+                alt={user.name}
+                fill
+                unoptimized
+                sizes="80px"
+                className="object-cover"
+              />
             ) : (
-              <UserCircleIcon size={48} weight="duotone" />
+              <div className="bg-primary-light text-primary-dark flex h-full w-full items-center justify-center text-2xl font-extrabold">
+                {user?.name ? (
+                  user.name.charAt(0).toUpperCase()
+                ) : (
+                  <UserCircleIcon size={48} weight="duotone" />
+                )}
+              </div>
             )}
           </div>
 
@@ -219,13 +272,21 @@ function AdminProfilePage() {
 
             {profileStatus.text && (
               <div
-                className={`rounded-lg border p-3 text-xs font-semibold ${
+                className={`flex items-start justify-between gap-2 rounded-lg border p-3 text-xs font-semibold ${
                   profileStatus.type === "success"
-                    ? "border-primary-dark/30 bgprimary-light text-primary-dark"
+                    ? "border-primary-dark/30 bg-primary-light text-primary-dark"
                     : "border-danger/30 bg-danger/10 text-danger"
                 }`}
               >
-                {profileStatus.text}
+                <span>{profileStatus.text}</span>
+                <button
+                  type="button"
+                  onClick={() => setProfileStatus({ type: "", text: "" })}
+                  className="shrink-0 opacity-60 transition-opacity hover:opacity-100"
+                  aria-label="Dismiss"
+                >
+                  <XIcon size={13} weight="bold" />
+                </button>
               </div>
             )}
 
@@ -234,6 +295,79 @@ function AdminProfilePage() {
               onSubmit={handleProfileSubmit}
               className="space-y-4"
             >
+              <div className="space-y-1.5">
+                <label className="text-heading text-xs font-bold tracking-wide uppercase">
+                  Profile Photo
+                </label>
+
+                <div className="flex items-center gap-3">
+                  {/* Avatar Preview with absolute remove badge */}
+                  <div className="relative h-14 w-14 shrink-0">
+                    <div className="border-border h-full w-full overflow-hidden rounded-full border-2">
+                      {avatarPreview ? (
+                        <Image
+                          src={avatarPreview}
+                          alt="Avatar preview"
+                          fill
+                          unoptimized
+                          sizes="56px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="bg-primary-light text-primary-dark flex h-full w-full items-center justify-center text-lg font-extrabold">
+                          {user?.name ? (
+                            user.name.charAt(0).toUpperCase()
+                          ) : (
+                            <UserCircleIcon size={28} weight="duotone" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Remove Avatar Badge */}
+                    {(avatarPreview || avatarFile) && (
+                      <button
+                        type="button"
+                        onClick={() => setShowRemoveAvatarModal(true)}
+                        title="Remove photo"
+                        aria-label="Remove photo"
+                        className="bg-danger absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-white shadow-sm transition-opacity hover:opacity-90"
+                      >
+                        <TrashIcon size={9} weight="bold" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Upload trigger button */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-border bg-background text-heading hover:border-primary-dark hover:text-primary-dark flex flex-1 items-center justify-center gap-2 rounded-md border px-3 py-2.5 text-xs font-semibold transition-colors"
+                  >
+                    <CameraIcon size={15} weight="duotone" />
+                    {avatarFile ? "Change Photo" : "Upload Photo"}
+                  </button>
+
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    id="avatar"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/avif,image/webp"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* Selected file Name Feedback */}
+                {avatarFile && (
+                  <p className="text-muted flex items-center gap-1.5 text-[11px]">
+                    <ImageIcon size={12} weight="duotone" />
+                    {avatarFile.name}
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-1.5">
                 <label
                   htmlFor="name"
@@ -269,7 +403,7 @@ function AdminProfilePage() {
             className="w-full justify-center py-2.5 text-xs"
             rightIcon={<CheckCircleIcon size={16} weight="bold" />}
           >
-            Save Name
+            Save Changes
           </Button>
         </StaggerItem>
 
@@ -293,13 +427,21 @@ function AdminProfilePage() {
 
             {emailStatus.text && (
               <div
-                className={`rounded-lg border p-3 text-xs font-semibold ${
+                className={`flex items-start justify-between gap-2 rounded-lg border p-3 text-xs font-semibold ${
                   emailStatus.type === "success"
                     ? "border-primary-dark/30 bg-primary-light text-primary-dark"
                     : "border-danger/30 bg-danger/10 text-danger"
                 }`}
               >
-                {emailStatus.text}
+                <span>{emailStatus.text}</span>
+                <button
+                  type="button"
+                  onClick={() => setEmailStatus({ type: "", text: "" })}
+                  className="shrink-0 opacity-60 transition-opacity hover:opacity-100"
+                  aria-label="Dismiss"
+                >
+                  <XIcon size={13} weight="bold" />
+                </button>
               </div>
             )}
 
@@ -403,13 +545,21 @@ function AdminProfilePage() {
 
             {passwordStatus.text && (
               <div
-                className={`rounded-lg border p-3 text-xs font-semibold ${
+                className={`flex items-start justify-between gap-2 rounded-lg border p-3 text-xs font-semibold ${
                   passwordStatus.type === "success"
                     ? "border-primary-dark/30 bg-primary-light text-primary-dark"
                     : "border-danger/30 bg-danger/10 text-danger"
                 }`}
               >
-                {passwordStatus.text}
+                <span>{passwordStatus.text}</span>
+                <button
+                  type="button"
+                  onClick={() => setPasswordStatus({ type: "", text: "" })}
+                  className="shrink-0 opacity-60 transition-opacity hover:opacity-100"
+                  aria-label="Dismiss"
+                >
+                  <XIcon size={13} weight="bold" />
+                </button>
               </div>
             )}
 
@@ -508,6 +658,14 @@ function AdminProfilePage() {
           </Button>
         </StaggerItem>
       </Stagger>
+
+      <DeleteConfirmationModal
+        isOpen={showRemoveAvatarModal}
+        onClose={() => setShowRemoveAvatarModal(false)}
+        onConfirm={handleConfirmRemoveAvatar}
+        title="Remove Profile Photo?"
+        description="Your profile photo will be removed when you save changes. This cannot be undone."
+      />
     </Container>
   );
 }
