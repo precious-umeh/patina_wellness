@@ -31,11 +31,6 @@ import Reveal from "@/app/components/animations/Reveal";
 import Stagger from "@/app/components/animations/Stagger";
 import StaggerItem from "@/app/components/animations/StaggerItem";
 
-// Mock Initial data representing lead tracking & catalog stats
-const INITIAL_STATS = {
-  activeProducts: 12,
-};
-
 function AdminDashboard() {
   const {
     pendingBookings,
@@ -46,6 +41,8 @@ function AdminDashboard() {
 
     newInquiries,
     newInquiriesCount,
+
+    activeProductsCount,
 
     selectedBooking,
     selectedInquiry,
@@ -95,8 +92,8 @@ function AdminDashboard() {
         <StaggerItem>
           <AdminStatsCard
             label="Active Products"
-            value={INITIAL_STATS.activeProducts}
-            subtext="WhatsApp CTA Enabled"
+            value={activeProductsCount}
+            subtext="Currently Listed"
             subtextClassName="text-muted font-bold"
             icon={<PackageIcon size={20} weight="duotone" />}
             iconClassName="bg-primary-light text-primary-dark"
