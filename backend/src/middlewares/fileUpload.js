@@ -72,9 +72,17 @@ export const uploadToCloudinary = (folder) => {
 
       next();
     } catch (error) {
+      const isDev = process.env.NODE_ENV !== "production";
+
       return res.status(500).json({
         message: "Image upload failed",
-        error: error.message,
+        ...(isDev && {
+          error: {
+            message: error.message,
+            cloudinaryStatus: error.http_code ?? null,
+            name: error.name ?? null,
+          },
+        }),
       });
     }
   };
@@ -93,3 +101,25 @@ export const deleteFromCloudinary = async (publicId) => {
 };
 
 export default upload;
+
+/*
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+      },
+      (error, result) => {
+        if (error) {
+          console.error("Cloudinary upload failed:", {
+            message: error.message,
+            http_code: error.http_code,
+            name: error.name,
+          });
+
+          reject(error);
+          return;
+        }
+
+        resolve(result);
+      },
+    );
+*/
