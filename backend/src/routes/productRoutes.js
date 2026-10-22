@@ -8,6 +8,7 @@ import {
   getProductAdmin,
   getProducts,
   getProductsAdmin,
+  getPublicProductById,
   replaceProductImages,
   updateProduct,
 } from "../controllers/productController.js";
@@ -23,6 +24,7 @@ const router = express.Router();
 
 router.get("/get-products", getProducts);
 router.get("/get-product/:slug", getProduct);
+router.get("/get-product-by-id/:id", getPublicProductById);
 
 /**
  * ============================================
@@ -42,7 +44,7 @@ router.get("/get-products-admin", authMiddleware, getProductsAdmin);
 
 router.get("/get-product-admin/:id", authMiddleware, getProductAdmin);
 
-router.patch("update-product/:id", authMiddleware, updateProduct);
+router.patch("/update-product/:id", authMiddleware, updateProduct);
 
 // Add one or multiple product images
 router.post(
