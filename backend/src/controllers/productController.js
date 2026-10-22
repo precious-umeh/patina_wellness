@@ -2,18 +2,30 @@ import mongoose from "mongoose";
 import Product from "../models/product.js";
 import Category from "../models/category.js";
 import throwError from "../utils/throwError.js";
+
 import { deleteFromCloudinary } from "../middlewares/fileUpload.js";
 import {
   buildProductImages,
   cleanupProductImages,
   cleanupUploadedImages,
 } from "../utils/productImages.js";
-import { getCategoryTreeIds } from "../utils/categoryUtils.js";
+import {
+  getCategoryBranchIds,
+  getCategoryTreeIds,
+} from "../utils/categoryUtils.js";
 import { escapeRegex } from "../utils/regexUtils.js";
 import {
   buildPaginationMeta,
   getPaginationParams,
 } from "../utils/paginationUtils.js";
+
+function parseBooleanField(value, fieldName) {
+  if (value === true || value === "true") return true;
+
+  if (value === false || value === "false") return false;
+
+  throwError(`${fieldName} must be either true or false`, 400);
+}
 
 /**
  * ============================================
@@ -24,7 +36,19 @@ export async function createProduct(req, res) {
   const uploadedFiles = req.files || [];
 
   try {
-    const { name, description, price, stock, categories } = req.body;
+    const {
+      name,
+      description,
+      price,
+      stock,
+      categories,
+      isFeatured: featuredValue,
+    } = req.body;
+
+    const isFeatured =
+      featuredValue === undefined
+        ? false
+        : parseBooleanField(featuredValue, "isFeatured");
 
     // build product image objects from cloudinary uploads
     const images = buildProductImages(uploadedFiles);
@@ -67,10 +91,11 @@ export async function createProduct(req, res) {
     // make sure categories actually exist
     const existingCategories = await Category.find({
       _id: { $in: parsedCategories },
-    });
+      isActive: true,
+    }).select("_id");
 
     if (existingCategories.length !== parsedCategories.length) {
-      throwError("One or more categories are invalid", 400);
+      throwError("One or more categories are invalid or inactive", 400);
     }
 
     // validate and convert numeric fields
@@ -104,6 +129,7 @@ export async function createProduct(req, res) {
       stock: productStock,
       categories: parsedCategories,
       images,
+      isFeatured,
     });
 
     return res.status(201).json({
@@ -128,7 +154,14 @@ export async function createProduct(req, res) {
  */
 export async function getProducts(req, res) {
   try {
-    const { search, category, sort = "newest", minPrice, maxPrice } = req.query;
+    const {
+      search,
+      category,
+      sort = "newest",
+      minPrice,
+      maxPrice,
+      isFeatured: featuredFilter,
+    } = req.query;
 
     const { page, limit, skip } = getPaginationParams(req.query, {
       defaultLimit: 20,
@@ -138,6 +171,10 @@ export async function getProducts(req, res) {
     const query = {
       isActive: true,
     };
+
+    if (featuredFilter !== undefined) {
+      query.isFeatured = parseBooleanField(featuredFilter, "isFeatured");
+    }
 
     // Search
     if (search !== undefined) {
@@ -243,7 +280,9 @@ export async function getProducts(req, res) {
         .sort(sortOptions[sort])
         .skip(skip)
         .limit(limit)
-        .select("name slug description price stock images categories")
+        .select(
+          "name slug description price stock images categories isFeatured",
+        )
         .populate("categories", "name slug parent"),
 
       Product.countDocuments(query),
@@ -292,7 +331,7 @@ export async function getProduct(req, res) {
       slug: slug.trim().toLowerCase(),
       isActive: true,
     })
-      .select("name slug description price stock images categories")
+      .select("name slug description price stock images categories isFeatured")
       .populate("categories", "name slug parent");
 
     if (!product) {
@@ -305,6 +344,43 @@ export async function getProduct(req, res) {
     });
   } catch (error) {
     console.error("Get Public Product Error:", error);
+
+    return res.status(error.statusCode || 500).json({
+      message: error.statusCode ? error.message : "Failed to retrieve product",
+    });
+  }
+}
+
+/**
+ * ============================================
+ * GET PRODUCT BY ID - PUBLIC
+ * ============================================
+ */
+export async function getPublicProductById(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      throwError("Invalid product ID", 400);
+    }
+
+    const product = await Product.findOne({
+      _id: id,
+      isActive: true,
+    })
+      .select("name slug description price stock images categories isFeatured")
+      .populate("categories", "name slug parent");
+
+    if (!product) {
+      throwError("Product not found", 404);
+    }
+
+    return res.status(200).json({
+      messaage: "Product retrieved successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("Get Public Product By ID Error:", error);
 
     return res.status(error.statusCode || 500).json({
       message: error.statusCode ? error.message : "Failed to retrieve product",
@@ -341,13 +417,14 @@ export async function getProductsAdmin(req, res) {
       throwError("isActive must be either true or false", 400);
     }
 
-    // Category filter
+    // Category filter: include the selected category and every descendant
     if (category !== undefined) {
       if (!mongoose.isValidObjectId(category)) {
         throwError("Invalid category ID", 400);
       }
 
-      query.categories = category;
+      const categoryBranchIds = await getCategoryBranchIds(category);
+      query.categories = { $in: categoryBranchIds };
     }
 
     // Search
@@ -357,10 +434,31 @@ export async function getProductsAdmin(req, res) {
       if (searchTerm) {
         const searchRegex = new RegExp(escapeRegex(searchTerm), "i");
 
+        const matchingCategories = await Category.find({
+          $or: [{ name: searchRegex }, { slug: searchRegex }],
+        })
+          .select("_id")
+          .lean();
+
+        const categoryBranches = await Promise.all(
+          matchingCategories.map((category) =>
+            getCategoryBranchIds(category._id),
+          ),
+        );
+
+        const categoryIds = [
+          ...new Map(
+            categoryBranches.flat().map((id) => [String(id), id]),
+          ).values(),
+        ];
+
         query.$or = [
           { name: searchRegex },
           { description: searchRegex },
           { slug: searchRegex },
+          ...(categoryIds.length > 0
+            ? [{ categories: { $in: categoryIds } }]
+            : []),
         ];
       }
     }
@@ -453,7 +551,15 @@ export async function updateProduct(req, res) {
       throwError("Product not found", 404);
     }
 
-    const { name, description, price, stock, categories, isActive } = req.body;
+    const {
+      name,
+      description,
+      price,
+      stock,
+      categories,
+      isActive,
+      isFeatured,
+    } = req.body;
 
     // update name
     if (name !== undefined) {
@@ -534,13 +640,19 @@ export async function updateProduct(req, res) {
 
       const existingCategories = await Category.find({
         _id: { $in: parsedCategories },
-      });
+        isActive: true,
+      }).select("_id");
 
       if (existingCategories.length !== parsedCategories.length) {
         throwError("One or more categories are invalid", 400);
       }
 
       product.categories = parsedCategories;
+    }
+
+    // Update featured status
+    if (isFeatured !== undefined) {
+      product.isFeatured = parseBooleanField(isFeatured, "isFeatured");
     }
 
     // update active status
