@@ -1,11 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import {
   ListIcon,
-  MagnifyingGlassIcon,
-  ShoppingCartIcon,
+  // MagnifyingGlassIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { useEffect, useState } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -15,14 +14,16 @@ import { isActive } from "@/app/lib/navigation";
 import { navLinks } from "@/app/data/navigations";
 
 import MobileNav from "./MobileNav";
-import SearchModal from "../ui/SearchModal";
 import Button from "../shared/Button";
+import CartLink from "../products/CartLink";
+// import SearchModal from "../ui/SearchModal";
 
 function Navbar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  /*
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const handleOpenSearch = () => {
     // Remove focus outline from clicked button
     if (document.activeElement instanceof HTMLElement) {
@@ -32,8 +33,10 @@ function Navbar() {
     // Open Modal
     setIsSearchOpen(true);
   };
+  */
 
   // Global Cmd+k / Ctrl+K keyboard shortcut
+  /*
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -45,6 +48,7 @@ function Navbar() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+  */
 
   return (
     <>
@@ -83,9 +87,9 @@ function Navbar() {
           </nav>
 
           <div className="nav-desktop:col-span-1 flex items-center justify-end gap-3">
+            {/*
             <button
               type="button"
-              // onClick={() => setIsSearchOpen(true)}
               onClick={handleOpenSearch}
               aria-label="Open Search"
               className="bg-primary-light hover:bg-primary/20 hidden h-10 w-10 items-center justify-center rounded-full transition-colors sm:flex"
@@ -95,17 +99,9 @@ function Navbar() {
                 className="text-primary-dark size-5"
               />
             </button>
+            */}
 
-            <button
-              type="button"
-              aria-label="Cart"
-              className="bg-primary-light hover:bg-primary/20 hidden h-10 w-10 items-center justify-center rounded-full transition-colors sm:flex"
-            >
-              <ShoppingCartIcon
-                weight="bold"
-                className="text-primary-dark size-5"
-              />
-            </button>
+            <CartLink className="hidden sm:flex" iconSize={20} />
 
             <Button
               href="/consultation"
@@ -132,16 +128,17 @@ function Navbar() {
         <MobileNav
           isOpen={isMenuOpen}
           onClose={() => setIsMenuOpen(false)}
-          onOpenSearch={() => setIsSearchOpen(true)}
+          // onOpenSearch={() => setIsSearchOpen(true)}s
           navLinks={navLinks}
         />
       </header>
 
       {/* Global Search modal */}
-      <SearchModal
+
+      {/* <SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-      />
+      /> */}
     </>
   );
 }
