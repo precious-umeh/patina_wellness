@@ -1,8 +1,7 @@
 "use client";
 
 import {
-  MagnifyingGlassIcon,
-  ShoppingCartIcon,
+  // MagnifyingGlassIcon,
   XIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
@@ -10,18 +9,19 @@ import { usePathname } from "next/navigation";
 import { isActive } from "@/app/lib/navigation";
 import Modal from "../shared/Modal";
 import Button from "../shared/Button";
+import CartLink from "../products/CartLink";
 
-function MobileNav({ isOpen, onClose, onOpenSearch, navLinks = [] }) {
+function MobileNav({ isOpen, onClose, navLinks = [] }) {
   const pathname = usePathname();
 
-  // Handle Search Trigger
+  /* Handle Search Trigger
   const handleSearchclick = (e) => {
     e.preventDefault();
     onClose();
     if (onOpenSearch) {
       onOpenSearch();
     }
-  };
+  };*/
 
   return (
     <Modal
@@ -69,7 +69,7 @@ function MobileNav({ isOpen, onClose, onOpenSearch, navLinks = [] }) {
       {/* Footer Actions */}
       <div className="border-border bg-primary-light/30 flex flex-col gap-4 border-t px-6 py-6">
         <div className="flex items-center gap-3">
-          <button
+          {/* <button
             type="button"
             onClick={handleSearchclick}
             aria-label="Search"
@@ -80,17 +80,9 @@ function MobileNav({ isOpen, onClose, onOpenSearch, navLinks = [] }) {
               weight="bold"
               className="text-primary-dark"
             />
-          </button>
-          <button
-            aria-label="Cart"
-            className="bg-primary-light hover:bg-primary/20 flex h-11 w-11 items-center justify-center rounded-full transition-colors"
-          >
-            <ShoppingCartIcon
-              size={22}
-              weight="bold"
-              className="text-primary-dark"
-            />
-          </button>
+          </button> */}
+
+          <CartLink className="h-11 w-11" iconSize={22} onClick={onClose} />
         </div>
 
         <Button
