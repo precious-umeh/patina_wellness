@@ -1,7 +1,13 @@
 import FadeUp from "../animations/FadeUp";
 import Button from "../shared/Button";
 
-function AdminPageHeader({ eyebrow, title, description, action }) {
+function AdminPageHeader({
+  eyebrow,
+  title,
+  description,
+  action,
+  secondaryAction,
+}) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -26,20 +32,40 @@ function AdminPageHeader({ eyebrow, title, description, action }) {
         )}
       </div>
 
-      {action && (
-        <FadeUp delay={0.3}>
-          <Button
-            href={action.href}
-            onClick={action.onClick}
-            variant="admin"
-            size="xs"
-            leftIcon={action.icon}
-            loading={action.loading}
-            disabled={action.disabled}
-          >
-            {action.label}
-          </Button>
-        </FadeUp>
+      {(action || secondaryAction) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {secondaryAction && (
+            <FadeUp delay={0.25}>
+              <Button
+                href={secondaryAction.href}
+                onClick={secondaryAction.onClick}
+                variant={secondaryAction.variant || "outline"}
+                size={secondaryAction.size || "xs"}
+                leftIcon={secondaryAction.icon}
+                loading={secondaryAction.loading}
+                disabled={secondaryAction.disabled}
+              >
+                {secondaryAction.label}
+              </Button>
+            </FadeUp>
+          )}
+
+          {action && (
+            <FadeUp delay={0.3}>
+              <Button
+                href={action.href}
+                onClick={action.onClick}
+                variant={action.variant || "admin"}
+                size={action.size || "xs"}
+                leftIcon={action.icon}
+                loading={action.loading}
+                disabled={action.disabled}
+              >
+                {action.label}
+              </Button>
+            </FadeUp>
+          )}
+        </div>
       )}
     </div>
   );
