@@ -1,6 +1,7 @@
 import {
   CalendarCheckIcon,
   EnvelopeSimpleIcon,
+  FolderOpenIcon,
   GearIcon,
   HandshakeIcon,
   HouseIcon,
@@ -18,6 +19,11 @@ export const adminNavLinks = [
     label: "Products",
     href: "/admin/products",
     icon: PackageIcon,
+  },
+  {
+    label: "Categories",
+    href: "/admin/categories",
+    icon: FolderOpenIcon,
   },
   {
     label: "Bookings",
