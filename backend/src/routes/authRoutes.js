@@ -11,6 +11,7 @@ import {
   verifyEmailChange,
 } from "../controllers/authController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import upload, { uploadToCloudinary } from "../middlewares/fileUpload.js";
 
 const router = express.Router();
 
@@ -27,7 +28,8 @@ router.post("/reset-password", resetPassword);
 router.patch(
   "/update-profile",
   authMiddleware,
-  // upload.single("avatar"),
+  upload.single("avatar"),
+  uploadToCloudinary("patina/avatars"),
   updateProfile,
 );
 
