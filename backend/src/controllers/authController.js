@@ -10,6 +10,7 @@ import {
   resetPasswordTemplate,
   verifyEmailTemplate,
 } from "../utils/emailTemplates.js";
+import { deleteFromCloudinary } from "../middlewares/fileUpload.js";
 
 const signToken = function (payload) {
   return jwt.sign(payload, env.jwtSecret, { expiresIn: env.tokenTimeout });
@@ -277,7 +278,7 @@ export async function getUserProfile(req, res) {
 export async function updateProfile(req, res) {
   try {
     const userId = req.user.id;
-    const { name } = req.body;
+    const { name, removeAvatar } = req.body;
 
     const user = await User.findById(userId);
 
@@ -297,8 +298,23 @@ export async function updateProfile(req, res) {
       user.name = trimmedName;
     }
 
+    // Handle Avatar Removal
+    if (removeAvatar === "true" || removeAvatar === true) {
+      if (user.avatarPublicId) {
+        await deleteFromCloudinary(user.avatarPublicId);
+      }
+
+      user.avatar = "";
+      user.avatarPublicId = "";
+    }
+
+    // Handle New Avatar Upload
     if (req.file) {
-      user.avatar = req.file.path;
+      if (user.avatarPublicId) {
+        await deleteFromCloudinary(user.avatarPublicId);
+      }
+      user.avatar = req.file.cloudinaryUrl;
+      user.avatarPublicId = req.file.cloudinaryPublicId;
     }
 
     await user.save();
