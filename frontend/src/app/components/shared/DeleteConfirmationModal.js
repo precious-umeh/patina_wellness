@@ -16,6 +16,7 @@ function DeleteConfirmationModal({
   title = "Delete item?",
   description = "This action cannot be undone.",
   itemName = "",
+  error = "",
 }) {
   return (
     <Modal
@@ -56,6 +57,15 @@ function DeleteConfirmationModal({
               <p className="text-heading truncate text-sm font-bold">
                 {itemName}
               </p>
+            </div>
+          )}
+
+          {error && (
+            <div
+              role="alert"
+              className="border-danger/30 bg-danger/10 text-danger mt-4 rounded-lg border p-3 text-xs font-medium"
+            >
+              {error}
             </div>
           )}
         </div>
