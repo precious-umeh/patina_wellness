@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getPendingBookings } from "@/app/lib/api/consultationBookings";
 import { getNewInquiries } from "@/app/lib/api/inquiries";
 import { getNewPartnerships } from "@/app/lib/api/partnerships";
+import { getProductsAdmin } from "@/app/lib/api/products";
 
 export function useAdminDashboard() {
   const [pendingBookings, setPendingBookings] = useState([]);
@@ -15,6 +16,8 @@ export function useAdminDashboard() {
 
   const [newInquiries, setNewInquiries] = useState([]);
   const [newInquiriesCount, setNewInquiriesCount] = useState(0);
+
+  const [activeProductsCount, setActiveproductsCount] = useState(0);
 
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [selectedPartnership, setSelectedPartnership] = useState(null);
@@ -28,16 +31,19 @@ export function useAdminDashboard() {
    * ========================================
    */
   const getDashboardData = async function () {
-    const [bookingsData, partnershipsData, inquiriesData] = await Promise.all([
-      getPendingBookings(10),
-      getNewPartnerships(3),
-      getNewInquiries(3),
-    ]);
+    const [bookingsData, partnershipsData, inquiriesData, productsData] =
+      await Promise.all([
+        getPendingBookings(10),
+        getNewPartnerships(3),
+        getNewInquiries(3),
+        getProductsAdmin(1, 1, "", "", true),
+      ]);
 
     return {
       bookings: bookingsData,
       partnerships: partnershipsData,
       inquiries: inquiriesData,
+      activeProductsCount: productsData.pagination?.totalProducts ?? 0,
     };
   };
 
@@ -55,6 +61,8 @@ export function useAdminDashboard() {
 
     setNewInquiries(data.inquiries.inquiries);
     setNewInquiriesCount(data.inquiries.totalNew);
+
+    setActiveproductsCount(data.activeProductsCount);
   };
 
   /**
@@ -154,6 +162,8 @@ export function useAdminDashboard() {
 
     newInquiries,
     newInquiriesCount,
+
+    activeProductsCount,
 
     selectedBooking,
     selectedPartnership,
