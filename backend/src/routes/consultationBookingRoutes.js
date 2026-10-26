@@ -8,10 +8,11 @@ import {
   updateBooking,
 } from "../controllers/consultationBookingController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { bookingLimiter } from "../middlewares/rateLimiters.js";
 
 const router = express.Router();
 
-router.post("/create-booking", createBooking);
+router.post("/create-booking", bookingLimiter, createBooking);
 
 router.get("/get-bookings", authMiddleware, getBookings);
 router.get("/get-pending-bookings", authMiddleware, getPendingBookings);
