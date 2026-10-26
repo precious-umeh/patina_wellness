@@ -5,7 +5,6 @@ import {
   LinkIcon,
   MapPinIcon,
   PhoneIcon,
-  PowerIcon,
   SnapchatLogoIcon,
   UserCircleIcon,
   WhatsappLogoIcon,
