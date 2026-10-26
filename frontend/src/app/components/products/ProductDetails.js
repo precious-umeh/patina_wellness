@@ -157,7 +157,7 @@ function ProductDetails({ slug }) {
     return () => {
       cancelled = true;
     };
-  }, [slug, requestVersion, router]);
+  }, [slug, requestVersion, router, error]);
 
   useEffect(() => {
     function refreshWhenVisible() {
