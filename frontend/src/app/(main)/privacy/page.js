@@ -14,7 +14,7 @@ function PrivacyPolicy() {
     <main>
       <PageHero
         title="Privacy Policy"
-        description="Learn how Patina Wellness Solutions collects, uses, shares and protects our personal data."
+        description="Learn how Patina Wellness Solutions collects, uses, shares and protects your personal data."
       />
 
       <Section>
@@ -23,9 +23,9 @@ function PrivacyPolicy() {
             <LegalSection title="1.1 Introduction & Scope">
               <p>
                 This Privacy Policy explains how Patina Wellness Solutions
-                collects, uses, shares and protects personal data when you our
-                website, or Services, in line with the Nigeria Data Protection
-                Act, 2023 (NDPA).
+                collects, uses, shares and protects personal data when you use
+                our website, or Services, in line with the Nigeria Data
+                Protection Act, 2023 (NDPA).
               </p>
             </LegalSection>
 
