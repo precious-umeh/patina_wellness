@@ -376,7 +376,7 @@ export async function getPublicProductById(req, res) {
     }
 
     return res.status(200).json({
-      messaage: "Product retrieved successfully",
+      message: "Product retrieved successfully",
       product,
     });
   } catch (error) {
