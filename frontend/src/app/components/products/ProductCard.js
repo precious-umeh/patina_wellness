@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ArrowRightIcon,
-  PackageIcon,
-  ShoppingCartIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { PackageIcon, ShoppingCartIcon } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import Link from "next/link";
 
