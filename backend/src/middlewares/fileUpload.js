@@ -1,31 +1,56 @@
 import multer from "multer";
-import path from "path";
+import path from "node:path";
 import cloudinary from "../config/cloudinary.js";
 
 const storage = multer.memoryStorage();
 
-const fileValidation = (req, file, cb) => {
-  const allowedFileTypes = /jpeg|jpg|png|gif|avif|webp/;
+const allowedExtensions = new Set([
+  ".jpeg",
+  ".jpg",
+  ".png",
+  ".gif",
+  ".avif",
+  ".webp",
+]);
 
-  const extensionName = allowedFileTypes.test(
-    path.extname(file.originalname).toLowerCase(),
+const allowedMimeTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/avif",
+  "image/webp",
+]);
+
+const fileValidation = (req, file, cb) => {
+  const extension = path.extname(file.originalname).toLowerCase();
+
+  const validExtension = allowedExtensions.has(extension);
+  const validMimeType = allowedMimeTypes.has(file.mimetype);
+
+  if (validExtension && validMimeType) {
+    return cb(null, true);
+  }
+
+  const error = new Error(
+    "Only JPEG, PNG, GIF, AVIF, and WebP images are allowed",
   );
 
-  const mimeType = allowedFileTypes.test(file.mimetype);
+  error.status = 400;
 
-  if (extensionName && mimeType) {
-    cb(null, true);
-  } else {
-    cb(
-      new Error("Only jpeg, jpg, png, gif, avif, and webp files are allowed"),
-      false,
-    );
-  }
+  return cb(error);
 };
 
 const upload = multer({
   storage,
   fileFilter: fileValidation,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 5,
+    fields: 20,
+    parts: 25,
+    fieldNameSize: 100,
+    fieldSize: 100 * 1024,
+  },
 });
 
 const uploadBuffer = (buffer, folder) => {
@@ -36,10 +61,14 @@ const uploadBuffer = (buffer, folder) => {
       },
       (error, result) => {
         if (error) {
-          reject(error);
-        } else {
-          resolve(result);
+          return reject(error);
         }
+
+        if (!result) {
+          return reject(new Error("Cloudinary returned no upload result"));
+        }
+
+        return resolve(result);
       },
     );
 
@@ -59,7 +88,7 @@ export const uploadToCloudinary = (folder) => {
       }
 
       // Multiple files
-      if (req.files && req.files.length > 0) {
+      if (req.files?.length) {
         await Promise.all(
           req.files.map(async (file) => {
             const result = await uploadBuffer(file.buffer, folder);
@@ -70,20 +99,15 @@ export const uploadToCloudinary = (folder) => {
         );
       }
 
-      next();
+      return next();
     } catch (error) {
-      const isDev = process.env.NODE_ENV !== "production";
-
-      return res.status(500).json({
-        message: "Image upload failed",
-        ...(isDev && {
-          error: {
-            message: error.message,
-            cloudinaryStatus: error.http_code ?? null,
-            name: error.name ?? null,
-          },
-        }),
+      const uploadError = new Error("Image upload failed", {
+        cause: error,
       });
+
+      uploadError.status = 502;
+
+      return next(uploadError);
     }
   };
 };
@@ -101,25 +125,3 @@ export const deleteFromCloudinary = async (publicId) => {
 };
 
 export default upload;
-
-/*
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-      },
-      (error, result) => {
-        if (error) {
-          console.error("Cloudinary upload failed:", {
-            message: error.message,
-            http_code: error.http_code,
-            name: error.name,
-          });
-
-          reject(error);
-          return;
-        }
-
-        resolve(result);
-      },
-    );
-*/
