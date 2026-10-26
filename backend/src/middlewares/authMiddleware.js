@@ -15,6 +15,12 @@ export const authMiddleware = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, env.jwtSecret);
 
+    if (decoded.role !== "admin") {
+      return res.status(403).json({
+        message: "Admin access required",
+      });
+    }
+
     req.user = {
       id: decoded.sub,
       email: decoded.email,
