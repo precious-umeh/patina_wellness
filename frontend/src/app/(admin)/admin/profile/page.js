@@ -303,7 +303,7 @@ function AdminProfilePage() {
                 <div className="flex items-center gap-3">
                   {/* Avatar Preview with absolute remove badge */}
                   <div className="relative h-14 w-14 shrink-0">
-                    <div className="border-border h-full w-full overflow-hidden rounded-full border-2">
+                    <div className="border-border relative h-full w-full overflow-hidden rounded-full border-2">
                       {avatarPreview ? (
                         <Image
                           src={avatarPreview}
