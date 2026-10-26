@@ -107,11 +107,11 @@ function commitCart(nextCart) {
   const normalizedCart = normalizeCart(nextCart);
 
   // Avoid storage writes and subscriber notifications when nothing changed.
-  if (areCartItemsEqual(cartSnapshot, normalizeCart)) {
+  if (areCartItemsEqual(cartSnapshot, normalizedCart)) {
     return;
   }
 
-  cartSnapshot = normalizeCart(nextCart);
+  cartSnapshot = normalizedCart;
   storageInitialized = true;
 
   try {
