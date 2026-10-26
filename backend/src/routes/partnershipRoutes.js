@@ -8,13 +8,14 @@ import {
   updatePartnership,
 } from "../controllers/partnershipController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { partnershipLimiter } from "../middlewares/rateLimiters.js";
 
 const router = express.Router();
 
 /**
  * Public
  */
-router.post("/create-partnership", createPartnership);
+router.post("/create-partnership", partnershipLimiter, createPartnership);
 
 /**
  * Admin

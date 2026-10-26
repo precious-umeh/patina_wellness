@@ -487,7 +487,7 @@ export async function deletePartnership(req, res) {
       throwError("Partnership application not found.", 404);
     }
 
-    await application.deletOne();
+    await application.deleteOne();
 
     return res.status(200).json({
       message: "Partnership application deleted successfully.",

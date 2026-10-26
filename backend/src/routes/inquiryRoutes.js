@@ -8,11 +8,12 @@ import {
   updateInquiry,
 } from "../controllers/inquiryController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { inquiryLimiter } from "../middlewares/rateLimiters.js";
 
 const router = express.Router();
 
 // public
-router.post("/create-inquiry", createInquiry);
+router.post("/create-inquiry", inquiryLimiter, createInquiry);
 
 // admin
 router.get("/get-inquiries", authMiddleware, getInquiries);
