@@ -13,6 +13,7 @@ const ACCEPTED_TYPES = [
 const ACCEPTED_EXTENSIONS = /\.(jpe?g|png|gif|avif|webp)$/i;
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB per image
+const MAX_IMAGES = 5; // Only 5 images can be uploaded at once
 
 function useProductImages() {
   const fileInputRef = useRef(null);
@@ -84,6 +85,16 @@ function useProductImages() {
 
     if (incomingFiles.length === 0) return;
 
+    const remainingSlots = MAX_IMAGES - selectedImagesRef.current.length;
+
+    if (remainingSlots <= 0) {
+      setImageError("You can upload a maximum of 5 images.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
     const validFiles = [];
     const errors = [];
 
@@ -104,10 +115,18 @@ function useProductImages() {
       validFiles.push(file);
     }
 
-    const newImages = validFiles.map((file) => ({
+    const acceptedFiles = validFiles.slice(0, remainingSlots);
+
+    const newImages = acceptedFiles.map((file) => ({
       file,
       previewUrl: URL.createObjectURL(file),
     }));
+
+    if (validFiles.length > remainingSlots) {
+      errors.push(
+        `You can select a maximum of ${MAX_IMAGES} images. Only the first ${remainingSlots} valid image(s) were added.`,
+      );
+    }
 
     if (newImages.length > 0) {
       setSelectedImages((currentImages) => [...currentImages, ...newImages]);
