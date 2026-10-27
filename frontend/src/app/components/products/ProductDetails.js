@@ -26,12 +26,45 @@ import { getPublicSiteSettings } from "@/app/lib/api/generalSettings";
 import { formatWhatsAppNumber } from "@/app/lib/formatPhoneNumber";
 import { formatNaira } from "@/app/lib/formatCurrency";
 
+function getPrimaryImageUrl(product) {
+  return product?.images?.find((image) => image?.url)?.url || "";
+}
+
+function getCategoryIdsKey(product) {
+  return (product?.categories || [])
+    .map((category) =>
+      typeof category === "object" ? category._id : category,
+    )
+    .filter(Boolean)
+    .sort()
+    .join(",");
+}
+
+function hasPublicProductChanged(previous, current) {
+  if (!previous || !current) {
+    return Boolean(current);
+  }
+
+  return (
+    previous._id !== current._id ||
+    previous.name !== current.name ||
+    previous.slug !== current.slug ||
+    previous.description !== current.description ||
+    Number(previous.price) !== Number(current.price) ||
+    Number(previous.stock) !== Number(current.stock) ||
+    Boolean(previous.isFeatured) !== Boolean(current.isFeatured) ||
+    getPrimaryImageUrl(previous) !== getPrimaryImageUrl(current) ||
+    getCategoryIdsKey(previous) !== getCategoryIdsKey(current)
+  );
+}
+
 function ProductDetails({ slug }) {
   const router = useRouter();
 
   const productIdRef = useRef(null);
   const productRef = useRef(null);
   const requestIdRef = useRef(0);
+  const lastRefreshAt = useRef(0);
 
   const { addToCart } = useCart();
 
@@ -42,7 +75,6 @@ function ProductDetails({ slug }) {
   const [failedSlug, setFailedSlug] = useState("");
   const [error, setError] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [imageState, setImageState] = useState({
     slug,
@@ -68,15 +100,13 @@ function ProductDetails({ slug }) {
     const requestId = ++requestIdRef.current;
 
     async function loadProduct() {
-      const previousProduct = productRef.current;
       const productId = productIdRef.current;
-
-      if (previousProduct && productId) {
-        setIsRefreshing(true);
-      }
+      const refreshById = Boolean(
+        productId && productRef.current?.slug === slug,
+      );
 
       try {
-        const response = productId
+        const response = refreshById
           ? await getPublicProductById(productId)
           : await getProduct(slug);
 
@@ -92,23 +122,15 @@ function ProductDetails({ slug }) {
         productIdRef.current = currentProduct._id;
         const previousProduct = productRef.current;
 
-        // Only update the displayed product when its data changes.
-        const productChanged =
-          !previousProduct ||
-          JSON.stringify(previousProduct) !== JSON.stringify(currentProduct);
-
         productRef.current = currentProduct;
 
-        if (productChanged) {
+        if (hasPublicProductChanged(previousProduct, currentProduct)) {
           setProduct(currentProduct);
         }
 
         setLoadedSlug(slug);
         setFailedSlug("");
-
-        if (error) {
-          setError("");
-        }
+        setError("");
 
         // Keep the browser URL in sync with the latest slug
         if (currentProduct.slug && currentProduct.slug !== slug) {
@@ -117,12 +139,12 @@ function ProductDetails({ slug }) {
             { scroll: false },
           );
         }
-      } catch (error) {
+      } catch (loadError) {
         if (cancelled || requestId !== requestIdRef.current) return;
 
-        console.error("Load Public Product Error:", error);
+        console.error("Load Public Product Error:", loadError);
 
-        if (error.response?.status === 404) {
+        if (loadError.response?.status === 404) {
           productRef.current = null;
           productIdRef.current = null;
 
@@ -136,18 +158,14 @@ function ProductDetails({ slug }) {
         if (!productRef.current) {
           setFailedSlug(slug);
           setError(
-            error.response?.data?.message ||
-              error.message ||
+            loadError.response?.data?.message ||
+              loadError.message ||
               "Unable to load this product. Please try again.",
           );
         } else {
           setError(
             "We couldn't refresh the latest product details. Please try again before purchasing.",
           );
-        }
-      } finally {
-        if (!cancelled && requestId === requestIdRef.current) {
-          setIsRefreshing(false);
         }
       }
     }
@@ -157,26 +175,29 @@ function ProductDetails({ slug }) {
     return () => {
       cancelled = true;
     };
-  }, [slug, requestVersion, router, error]);
+  }, [slug, requestVersion, router]);
 
   useEffect(() => {
-    function refreshWhenVisible() {
-      if (document.visibilityState === "visible") {
-        setRequestVersion((current) => current + 1);
-      }
+    function requestRefresh() {
+      if (document.visibilityState !== "visible") return;
+
+      const now = Date.now();
+
+      if (now - lastRefreshAt.current < 5000) return;
+
+      lastRefreshAt.current = now;
+      setRequestVersion((current) => current + 1);
     }
 
-    const intervalId = window.setInterval(() => {
-      refreshWhenVisible();
-    }, 30_000);
+    const intervalId = window.setInterval(requestRefresh, 30_000);
 
-    document.addEventListener("visibilitychange", refreshWhenVisible);
-    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", requestRefresh);
+    window.addEventListener("focus", requestRefresh);
 
     return () => {
       window.clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", refreshWhenVisible);
-      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", requestRefresh);
+      window.removeEventListener("focus", requestRefresh);
     };
   }, []);
 
@@ -297,7 +318,7 @@ function ProductDetails({ slug }) {
   const quantityExceedsStock = quantity > stockCount;
 
   function handleAddToCart() {
-    if (!inStock || quantityExceedsStock || isRefreshing || error) return;
+    if (!inStock || quantityExceedsStock || error) return;
 
     const result = addToCart(product, quantity);
     setCartMessage(result.message);
@@ -309,7 +330,6 @@ function ProductDetails({ slug }) {
     quantity <= stockCount &&
     !whatsappLoading &&
     Boolean(whatsappNumber) &&
-    !isRefreshing &&
     !error;
 
   function handleBuyNow() {
@@ -505,7 +525,7 @@ function ProductDetails({ slug }) {
                   <button
                     type="button"
                     aria-label="Increase quantity"
-                    disabled={quantity >= stockCount || isRefreshing}
+                    disabled={quantity >= stockCount}
                     onClick={() =>
                       setQuantityState({
                         slug,
@@ -540,13 +560,11 @@ function ProductDetails({ slug }) {
               >
                 {!inStock
                   ? "Currently Out of Stock"
-                  : isRefreshing
-                    ? "Updating Product..."
-                    : whatsappLoading
-                      ? "Loading Contact"
-                      : whatsappNumber
-                        ? "Buy Now via WhatsApp"
-                        : "WhatsApp Ordering Unavailable"}
+                  : whatsappLoading
+                    ? "Loading Contact"
+                    : whatsappNumber
+                      ? "Buy Now via WhatsApp"
+                      : "WhatsApp Ordering Unavailable"}
               </Button>
 
               <Button
@@ -556,10 +574,7 @@ function ProductDetails({ slug }) {
                 fullWidth
                 leftIcon={<ShoppingCartIcon size={18} weight="bold" />}
                 disabled={
-                  !inStock ||
-                  quantityExceedsStock ||
-                  isRefreshing ||
-                  Boolean(error)
+                  !inStock || quantityExceedsStock || Boolean(error)
                 }
                 onClick={handleAddToCart}
               >
