@@ -69,13 +69,51 @@ server.use((err, req, res, next) => {
   }
 
   if (err instanceof multer.MulterError) {
-    const isTooLarge = err.code === "LIMIT_FILE_SIZE";
+    const multerErrors = {
+      LIMIT_FILE_SIZE: {
+        status: 413,
+        message: "Each image must be 5 MB or smaller.",
+      },
 
-    return res.status(isTooLarge ? 413 : 400).json({
+      LIMIT_FILE_COUNT: {
+        status: 400,
+        message: "You can upload a maximum of 5 images at a time.",
+      },
+
+      LIMIT_UNEXPECTED_FILE: {
+        status: 400,
+        message: "Unexpected image field. Please check the selected files.",
+      },
+
+      LIMIT_FIELD_COUNT: {
+        status: 400,
+        message: "Too many form fields were submitted.",
+      },
+
+      LIMIT_PART_COUNT: {
+        status: 400,
+        message: "The request contains too many parts.",
+      },
+
+      LIMIT_FIELD_VALUE: {
+        status: 413,
+        message: "A form field exceeds tha maximum allowed size.",
+      },
+
+      LIMIT_FIELD_KEY: {
+        status: 400,
+        message: "A form field name is too long.",
+      },
+    };
+
+    const errorDetails = multerErrors[err.code] || {
+      status: 400,
+      message: "Invalid file upload. Please check your images and try again.",
+    };
+
+    return res.status(errorDetails.status).json({
       success: false,
-      message: isTooLarge
-        ? "Image exceeds the maximum allowed file size"
-        : "Invalid file upload",
+      message: errorDetails.message,
     });
   }
 
