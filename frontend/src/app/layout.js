@@ -20,12 +20,37 @@ const inter = localFont({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://patinawellnesssolutions.com"),
+
   title: {
     default: "Patina Wellness Solutions",
     template: "%s | Patina Wellness Solutions",
   },
   description:
     "Patina Wellness Solutions is a precision health and wellness consultancy dedicated to helping individuals and organizations achieve holistic wellbeing.",
+
+  openGraph: {
+    type: "website",
+    locale: "en_NG",
+    siteName: "Patina Wellness Solutions",
+    title: "Patina Wellness Solutions",
+    description:
+      "A precision health and wellness consultancy dedicated to helping individuals and organizations achieve holistic wellbeing.",
+    images: [
+      {
+        url: "/og-image.png",
+        alt: "Patina Wellness Solutions - wellness and wellbeing",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Patina Wellness Solutions",
+    description:
+      "A precision health and wellness consultancy dedicated to helping indiduals and organizations achieve holistic wellbeing",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({ children }) {
