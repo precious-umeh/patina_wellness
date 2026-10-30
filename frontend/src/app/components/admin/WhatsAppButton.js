@@ -38,10 +38,7 @@ function WhatsAppButton({
   );
 
   function handleClick() {
-    if (!phone) {
-      console.error("WhatsApp phone number is missing.");
-      return;
-    }
+    if (!phone) return;
 
     const formattedPhone = phone.replace(/[^0-9]/g, "");
     const encodedMessage = encodeURIComponent(message || "");

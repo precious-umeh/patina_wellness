@@ -24,7 +24,7 @@ const FEATURED_PRODUCTS_LIMIT = 4;
 function FeaturedProductSkeleton() {
   return (
     <div className="border-border overflow-hidden rounded-xl border">
-      <div className="bg-surface aspect-[4/3] animate-pulse" />
+      <div className="bg-surface aspect-4/3 animate-pulse" />
 
       <div className="space-y-4 p-5">
         <div className="bg-surface h-3 w-1/3 animate-pulse rounded" />
@@ -60,8 +60,6 @@ function FeaturedProducts() {
         setError("");
       } catch (error) {
         if (cancelled) return;
-
-        console.error("Load Featured Products Error:", error);
 
         setProducts([]);
         setError(

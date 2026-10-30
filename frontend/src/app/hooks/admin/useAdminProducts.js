@@ -78,8 +78,6 @@ function useAdminProducts() {
       } catch (error) {
         if (cancelled) return;
 
-        console.error("Load Admin Products Error:", error);
-
         setError(getErrorMessage(error));
         setProducts([]);
         setTotalPages(1);

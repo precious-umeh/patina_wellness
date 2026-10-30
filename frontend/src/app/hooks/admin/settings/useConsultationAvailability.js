@@ -47,8 +47,6 @@ export function useConsultationAvailability() {
 
       return data;
     } catch (error) {
-      console.error("Fetch Availability Error:", error);
-
       throw new Error(
         error.response?.data?.message ||
           "Unable to retrieve consultation availability.",
@@ -311,8 +309,6 @@ export function useConsultationAvailability() {
 
       setSuccessMessage("Consultation availability updated successfully.");
     } catch (error) {
-      console.error("Update Availability Error:", error);
-
       setError(
         error.response?.data?.message ||
           "Unable to update consultation availability.",

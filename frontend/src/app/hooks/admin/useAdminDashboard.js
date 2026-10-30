@@ -24,6 +24,8 @@ export function useAdminDashboard() {
   const [selectedInquiry, setSelectedInquiry] = useState(null);
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   /**
    * ========================================
@@ -74,15 +76,18 @@ export function useAdminDashboard() {
     let cancelled = false;
 
     async function loadDashboard() {
+      setError("");
+
       try {
         const data = await getDashboardData();
 
         if (cancelled) return;
 
         updateDashboardState(data);
-      } catch (error) {
+        setHasLoaded(true);
+      } catch {
         if (!cancelled) {
-          console.error("Fetch Dashboard Data Error:", error);
+          setError("Failed to load dashboard data. Please try again.");
         }
       } finally {
         if (!cancelled) {
@@ -104,12 +109,15 @@ export function useAdminDashboard() {
    * ========================================
    */
   const refreshDashboard = async function () {
+    setError("");
+
     try {
       const data = await getDashboardData();
 
       updateDashboardState(data);
-    } catch (error) {
-      console.error("Refresh Dashboard Data Error:", error);
+      setHasLoaded(true);
+    } catch {
+      setError("Failed to refresh dashboard data. Please try again.");
     }
   };
 
@@ -170,6 +178,8 @@ export function useAdminDashboard() {
     selectedInquiry,
 
     loading,
+    error,
+    hasLoaded,
 
     handleSelectBooking,
     handleSelectPartnership,

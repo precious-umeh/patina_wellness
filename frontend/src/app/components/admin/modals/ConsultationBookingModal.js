@@ -70,8 +70,6 @@ function ConsultationBookingModal({
       onUpdated?.(updatedBooking);
       onClose();
     } catch (error) {
-      console.error("Update Booking Error:", error);
-
       setError(
         error.response?.data?.message ||
           "Unable to update consultation booking.",
@@ -100,8 +98,6 @@ function ConsultationBookingModal({
       onBookingDeleted?.(booking._id);
       onClose();
     } catch (error) {
-      console.error("Delete Booking Error:", error);
-
       setError(
         error.response?.data?.message ||
           "Unable to delete this consultation booking.",

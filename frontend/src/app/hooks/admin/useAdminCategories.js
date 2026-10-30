@@ -41,7 +41,6 @@ function useAdminCategories() {
       } catch (error) {
         if (cancelled) return;
 
-        console.error("Load Admin Categories Error:", error);
         setError(getErrorMessage(error));
         setCategories([]);
       } finally {

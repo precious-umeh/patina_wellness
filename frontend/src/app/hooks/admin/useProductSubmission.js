@@ -192,11 +192,6 @@ function useProductSubmission({
         onUpdated?.(savedProduct);
         onClose();
       } catch (error) {
-        console.error(
-          isEditing ? "Update Product Error:" : "Create Product Error:",
-          error,
-        );
-
         // If some update operations succeeded before another failed,
         // refresh the product list while keeping the editor open.
         if (isEditing && productWasMutated) {

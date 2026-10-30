@@ -45,7 +45,7 @@ function ContactFormContent() {
     setSuccess(false);
 
     try {
-      const response = await createInquiry({
+      await createInquiry({
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
@@ -53,15 +53,11 @@ function ContactFormContent() {
         message: formData.message,
       });
 
-      console.log("Inquiry submitted:", response);
-
       // Reset Form
       setFormData(initialState);
 
       setSuccess(true);
     } catch (error) {
-      console.error("Submit Inquiry Error:", error);
-
       setError(
         error.response?.data?.message ||
           "Unable to submit your inquiry. Please try again.",

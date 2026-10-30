@@ -69,8 +69,6 @@ function PartnershipModal({
       onUpdated?.(updatedPartnership);
       onClose();
     } catch (error) {
-      console.error("Update Partnership Error:", error);
-
       setError(
         error.response?.data?.message ||
           "Unable to update this partnership application.",
@@ -99,8 +97,6 @@ function PartnershipModal({
       onPartnershipDeleted?.(partnership._id);
       onClose();
     } catch (error) {
-      console.error("Delete Partnership Error:", error);
-
       setError(
         error.response?.data?.message ||
           "Unable to delete this partnership application.",

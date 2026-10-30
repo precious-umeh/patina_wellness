@@ -118,9 +118,8 @@ function commitCart(nextCart) {
     if (typeof window !== "undefined") {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartSnapshot));
     }
-  } catch (error) {
+  } catch {
     // Keep the cart usable for this session if the browser storage fails.
-    console.error("Persist Guest Cart Error:", error);
   }
 
   notifySubscribers();

@@ -20,8 +20,6 @@ export function usePublicSiteSettings() {
 
       return response;
     } catch (error) {
-      console.error("Fetch Public Site Settings Error:", error);
-
       throw new Error(
         error.response?.data?.message || "Unable to retrieve site settings.",
       );
@@ -65,8 +63,6 @@ export function usePublicSiteSettings() {
           location: data?.location ?? "",
         });
       } catch (error) {
-        console.error("Initialize Public Site Settings Error:", error);
-
         setError(error.message);
       } finally {
         if (!cancelled) {

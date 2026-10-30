@@ -121,8 +121,6 @@ function useCategoryForm({
         onSaved?.(response.category, isEditing);
         onClose?.();
       } catch (error) {
-        console.error("Save Category Error:", error);
-
         setError(
           error?.response?.data?.message ||
             "Unable to save this category. Please try again.",

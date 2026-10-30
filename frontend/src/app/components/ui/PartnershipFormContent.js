@@ -136,7 +136,7 @@ function PartnershipFormContent() {
     setError("");
 
     try {
-      const response = await createPartnership({
+      await createPartnership({
         partnershipType: formData.partnershipType,
         fullName: formData.fullName,
         email: formData.email,
@@ -154,12 +154,8 @@ function PartnershipFormContent() {
         consent: formData.consent,
       });
 
-      console.log("Partnership submitted:", response);
-
       setIsSubmitted(true);
     } catch (error) {
-      console.error("Submit Partnership Error:", error);
-
       setError(
         error.response?.data?.message ||
           "Unable to submit your partnership application. Please try again.",

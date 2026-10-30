@@ -114,8 +114,6 @@ function AdminInquiriesPage() {
       } catch (error) {
         if (cancelled) return;
 
-        console.error("Fetch Inquiries Error:", error);
-
         setError(
           error.response?.data?.message || "Unable to retrieve inquiries.",
         );

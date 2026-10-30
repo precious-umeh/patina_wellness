@@ -110,8 +110,6 @@ function AdminBookingsPage() {
       } catch (error) {
         if (cancelled) return;
 
-        console.error("Fetch Bookings Error:", error);
-
         setError(
           error.response?.data?.message ||
             "Unable to retrieve consultation bookings.",

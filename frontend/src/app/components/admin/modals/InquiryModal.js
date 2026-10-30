@@ -66,8 +66,6 @@ function InquiryModal({
       onUpdated?.(updatedInquiry);
       onClose();
     } catch (error) {
-      console.error("Update Inquiry Error:", error);
-
       setError(
         error.response?.data?.message || "Unable to update this inquiry.",
       );
@@ -95,8 +93,6 @@ function InquiryModal({
       onInquiryDeleted?.(inquiry._id);
       onClose();
     } catch (error) {
-      console.error("Delete Inquiry Error:", error);
-
       setError(
         error.response?.data?.message || "Unable to delete this inquiry.",
       );

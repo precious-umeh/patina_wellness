@@ -161,8 +161,6 @@ function CartPage() {
               };
             }
 
-            console.error(`Verify Cart product Error (${productId}):`, error);
-
             return {
               productId,
               product: null,
@@ -258,9 +256,8 @@ function CartPage() {
         if (cancelled) return;
 
         setWhatsappNumber(number ? formatWhatsAppNumber(number) : "");
-      } catch (error) {
+      } catch {
         if (!cancelled) {
-          console.error("Load Cart WhatsApp Setings Error:", error);
           setWhatsappNumber("");
         }
       } finally {
@@ -432,9 +429,7 @@ function CartPage() {
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      console.error("Final Cart Verification Error:", error);
-
+    } catch {
       setCheckoutMessage(
         "We couldn't verify your cart just now. Please try again.",
       );

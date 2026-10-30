@@ -37,8 +37,6 @@ export function useGeneralSettings() {
 
       return data;
     } catch (error) {
-      console.error("Fetch General Settings Error:", error);
-
       throw new Error(
         error.response?.data?.message || "Unable to retrieve general settings.",
       );
@@ -197,8 +195,6 @@ export function useGeneralSettings() {
 
       setSuccessMessage("General settings updated successfully.");
     } catch (error) {
-      console.error("Update General Settings Error:", error);
-
       setError(
         error.response?.data?.message || "Unable to update general settings.",
       );

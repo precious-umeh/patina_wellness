@@ -71,7 +71,6 @@ function useProductCategories(isOpen) {
       } catch (error) {
         if (cancelled) return;
 
-        console.error("Load Product Categories Error:", error);
         setCategories([]);
 
         setCategoriesError(getErrorMessage(error));
@@ -178,8 +177,6 @@ function useProductCategories(isOpen) {
 
       setCategories(getActiveCategoryTree(data.categories || []));
     } catch (error) {
-      console.error("Retry Load Categories Error:", error);
-
       setCategoriesError(getErrorMessage(error));
     } finally {
       setCategoriesLoading(false);

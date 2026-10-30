@@ -104,7 +104,6 @@ function AdminProductPage() {
       } catch (error) {
         if (cancelled) return;
 
-        console.error("Load Product Categories Error:", error);
         setCategoriesError(getErrorMessage(error));
       } finally {
         if (!cancelled) {
@@ -206,7 +205,6 @@ function AdminProductPage() {
       setNotice(`"${deletedName}" was deleted successfully.`);
       refreshAfterProductDeleted();
     } catch (error) {
-      console.error("Delete Product Error:", error);
       setDeleteProductError(getErrorMessage(error));
     } finally {
       setDeletingProduct(false);

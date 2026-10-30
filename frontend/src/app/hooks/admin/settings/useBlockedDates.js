@@ -48,8 +48,6 @@ export function useBlockedDates() {
 
       return data;
     } catch (error) {
-      console.error("Fetch Blocked Dates Error:", error);
-
       throw new Error(
         error.response?.data?.message ||
           "Unable to retrieve blocked consultation dates.",
@@ -151,8 +149,6 @@ export function useBlockedDates() {
 
       return true;
     } catch (error) {
-      console.error("Save Blocked Date Error:", error);
-
       setError(error.response?.data?.message || "Unable to save blocked date.");
 
       return false;
@@ -220,8 +216,6 @@ export function useBlockedDates() {
       setIsDeleteBlockedDateModalOpen(false);
       setBlockedDateToDelete(null);
     } catch (error) {
-      console.error("Delete Blocked Date Error:", error);
-
       setError(
         error.response?.data?.message || "Unable to remove the blocked date.",
       );

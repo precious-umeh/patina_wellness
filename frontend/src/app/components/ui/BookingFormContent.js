@@ -139,8 +139,6 @@ function BookingFormContent() {
 
       setAvailableSlots(data.timeSlots);
     } catch (error) {
-      console.error("Fetch Available Slots Error:", error);
-
       setAvailableSlots([]);
 
       setAvailabilityError(
@@ -262,14 +260,10 @@ function BookingFormContent() {
     };
 
     try {
-      const response = await server.post("/api/create-booking", payload);
-
-      console.log("Booking created:", response.data);
+      await server.post("/api/create-booking", payload);
 
       setIsSubmitted(true);
     } catch (error) {
-      console.error("Create Booking Error:", error);
-
       setSubmitError(
         error.response?.data?.message ||
           "Unable to submit your consultation booking. Please try again.",

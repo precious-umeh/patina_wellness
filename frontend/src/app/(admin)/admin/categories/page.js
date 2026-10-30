@@ -147,8 +147,6 @@ function AdminCategoriesPage() {
 
       refreshCategories();
     } catch (error) {
-      console.error("Delete Category Error:", error);
-
       setDeleteError(getErrorMessage(error));
     } finally {
       setDeleting(false);

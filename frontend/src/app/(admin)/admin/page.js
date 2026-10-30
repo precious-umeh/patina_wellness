@@ -30,6 +30,7 @@ import AdminDashboardSkeleton from "@/app/components/admin/AdminDashboardSkeleto
 import Reveal from "@/app/components/animations/Reveal";
 import Stagger from "@/app/components/animations/Stagger";
 import StaggerItem from "@/app/components/animations/StaggerItem";
+import Button from "@/app/components/shared/Button";
 
 function AdminDashboard() {
   const {
@@ -49,6 +50,8 @@ function AdminDashboard() {
     selectedPartnership,
 
     loading,
+    error,
+    hasLoaded,
 
     handleSelectBooking,
     handleSelectPartnership,
@@ -61,10 +64,36 @@ function AdminDashboard() {
     setSelectedBooking,
     setSelectedPartnership,
     setSelectedInquiry,
+
+    refreshDashboard,
   } = useAdminDashboard();
 
   if (loading) {
     return <AdminDashboardSkeleton />;
+  }
+
+  if (error && !hasLoaded) {
+    return (
+      <div className="bg-surface border-border rounded-xl border p-8 text-center">
+        <h2 className="text-heading text-lg font-bold">
+          Unable to load dashboard
+        </h2>
+
+        <p className="text-muted mt-2 text-sm">
+          Something went wrong loading your dashboard data. Please try again.
+        </p>
+
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          onClick={refreshDashboard}
+          className="mt-4"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -81,6 +110,22 @@ function AdminDashboard() {
           icon: <PlusIcon size={16} weight="bold" />,
         }}
       />
+
+      {error && (
+        <div className="border-danger/30 bg-danger/10 rounded-lg border p-3">
+          <p className="text-danger text-sm font-semibold">{error}</p>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
+            onClick={refreshDashboard}
+            className="mt-2"
+          >
+            Try Again
+          </Button>
+        </div>
+      )}
 
       {/* Metric Summary Cards Grid */}
       <Stagger

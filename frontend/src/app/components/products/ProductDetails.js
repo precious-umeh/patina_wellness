@@ -32,9 +32,7 @@ function getPrimaryImageUrl(product) {
 
 function getCategoryIdsKey(product) {
   return (product?.categories || [])
-    .map((category) =>
-      typeof category === "object" ? category._id : category,
-    )
+    .map((category) => (typeof category === "object" ? category._id : category))
     .filter(Boolean)
     .sort()
     .join(",");
@@ -142,8 +140,6 @@ function ProductDetails({ slug }) {
       } catch (loadError) {
         if (cancelled || requestId !== requestIdRef.current) return;
 
-        console.error("Load Public Product Error:", loadError);
-
         if (loadError.response?.status === 404) {
           productRef.current = null;
           productIdRef.current = null;
@@ -217,9 +213,8 @@ function ProductDetails({ slug }) {
         if (cancelled) return;
 
         setWhatsappNumber(number);
-      } catch (error) {
+      } catch {
         if (!cancelled) {
-          console.error("load WhatsApp Contact Error:", error);
           setWhatsappNumber("");
         }
       } finally {
@@ -573,9 +568,7 @@ function ProductDetails({ slug }) {
                 size="md"
                 fullWidth
                 leftIcon={<ShoppingCartIcon size={18} weight="bold" />}
-                disabled={
-                  !inStock || quantityExceedsStock || Boolean(error)
-                }
+                disabled={!inStock || quantityExceedsStock || Boolean(error)}
                 onClick={handleAddToCart}
               >
                 Add to Cart
