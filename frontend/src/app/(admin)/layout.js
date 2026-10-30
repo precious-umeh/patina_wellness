@@ -4,6 +4,10 @@ import AdminGuard from "../components/auth/AdminGuard";
 export const metadata = {
   title: "Admin Dashboard | Patina Wellness Solutions",
   description: "Management dashboard for Patina Wellness Solutions.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function AdminLayout({ children }) {
