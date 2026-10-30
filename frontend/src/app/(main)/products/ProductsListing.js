@@ -88,8 +88,6 @@ function ProductsListing() {
       } catch (error) {
         if (cancelled) return;
 
-        console.error("Load Public Categories Error:", error);
-
         setCategoriesError(
           error.response?.data?.message || "Categories could not be loaded.",
         );
@@ -141,8 +139,6 @@ function ProductsListing() {
         setError("");
       } catch (error) {
         if (cancelled) return;
-
-        console.error("Load Public Products Error:", error);
 
         setProducts([]);
         setTotalProducts(0);
