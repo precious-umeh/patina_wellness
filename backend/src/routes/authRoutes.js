@@ -23,7 +23,7 @@ import {
 const router = express.Router();
 
 router.post("/login", loginLimiter, login);
-router.post("/logout", logout);
+router.post("/logout", authMiddleware, logout);
 
 router.get("/profile", authMiddleware, getUserProfile);
 

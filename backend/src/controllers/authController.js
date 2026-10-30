@@ -46,9 +46,10 @@ export async function login(req, res) {
     }
 
     const token = signToken({
-      sub: user._id,
+      sub: user._id.toString(),
       email: user.email,
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
     });
 
     const userResponse = user.toObject();
@@ -69,9 +70,21 @@ export async function login(req, res) {
 }
 
 export async function logout(req, res) {
-  return res.status(200).json({
-    message: "User logged out successfully",
-  });
+  try {
+    await User.findByIdAndUpdate(req.user.id, {
+      $inc: { tokenVersion: 1 },
+    });
+
+    return res.status(200).json({
+      message: "User logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout Error:", error);
+
+    return res.status(500).json({
+      message: "Error logging out.",
+    });
+  }
 }
 
 export async function changePassword(req, res) {
@@ -117,6 +130,7 @@ export async function changePassword(req, res) {
     }
 
     user.password = await bcrypt.hash(newPassword, 12);
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
 
     await user.save();
 
@@ -235,6 +249,7 @@ export async function resetPassword(req, res) {
 
     // Hash new password
     user.password = await bcrypt.hash(newPassword, 12);
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
 
     // Invalidate reset token
     user.resetPasswordToken = null;
@@ -467,6 +482,7 @@ export async function verifyEmailChange(req, res) {
     }
 
     user.email = user.pendingEmail;
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
 
     user.pendingEmail = null;
     user.emailChangeToken = null;

@@ -7,7 +7,6 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -16,7 +15,7 @@ export function AuthProvider({ children }) {
   const [isRequestingEmailChange, setIsRequestingEmailChange] = useState(false);
   const [isVerifyingEmailChange, setIsVerifyingEmailChange] = useState(false);
 
-  const isAuthenticated = !!token;
+  const isAuthenticated = !!user;
 
   /**
    * =========================
@@ -33,7 +32,6 @@ export function AuthProvider({ children }) {
       const userToken = response.data.token;
 
       setUser(userData);
-      setToken(userToken);
 
       localStorage.setItem("user", JSON.stringify(userData));
       localStorage.setItem("token", userToken);
@@ -43,8 +41,6 @@ export function AuthProvider({ children }) {
         user: userData,
       };
     } catch (error) {
-      console.error("Login Error:", error);
-
       return {
         success: false,
         message: error.response?.data?.message || "Login Failed.",
@@ -62,11 +58,10 @@ export function AuthProvider({ children }) {
   async function logout() {
     try {
       await server.post("/auth/logout");
-    } catch (error) {
-      console.error("Backend Logout Failed:", error);
+    } catch {
+      // Local logout should continue even if the backend request fails.
     } finally {
       setUser(null);
-      setToken(null);
 
       localStorage.removeItem("user");
       localStorage.removeItem("token");
@@ -87,14 +82,24 @@ export function AuthProvider({ children }) {
       setUser(userData);
 
       localStorage.setItem("user", JSON.stringify(userData));
+
+      return {
+        success: true,
+        user: userData,
+      };
     } catch (error) {
-      console.error("Session expired or Invalid token:", error);
+      if (error.response?.status === 401) {
+        setUser(null);
 
-      setUser(null);
-      setToken(null);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      }
 
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Unable to retrieve your profile.",
+      };
     }
   }
 
@@ -114,8 +119,6 @@ export function AuthProvider({ children }) {
         message: response.data.message,
       };
     } catch (error) {
-      console.error("Forgot Password Error:", error);
-
       return {
         success: false,
         message:
@@ -146,8 +149,6 @@ export function AuthProvider({ children }) {
         message: response.data.message,
       };
     } catch (error) {
-      console.error("Reset Password Error:", error);
-
       return {
         success: false,
         message: error.response?.data?.message || "Unable to reset password.",
@@ -176,8 +177,6 @@ export function AuthProvider({ children }) {
         message: response.data.message,
       };
     } catch (error) {
-      console.error("Changing Password Error:", error);
-
       return {
         success: false,
         message: error.response?.data?.message || "Unable to change password",
@@ -214,8 +213,6 @@ export function AuthProvider({ children }) {
         message: response.data.message,
       };
     } catch (error) {
-      console.error("Updating Profile Error:", error);
-
       return {
         success: false,
         message: error.response?.data?.message || "Unable to update profile.",
@@ -244,8 +241,6 @@ export function AuthProvider({ children }) {
         message: response.data.message,
       };
     } catch (error) {
-      console.error("Request Email Change Error:", error);
-
       return {
         success: false,
         message:
@@ -277,8 +272,6 @@ export function AuthProvider({ children }) {
         message: response.data.message,
       };
     } catch (error) {
-      console.error("Verify Email Change Error:", error);
-
       return {
         success: false,
         message:
@@ -298,7 +291,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     function handleUnauthorized() {
       setUser(null);
-      setToken(null);
     }
 
     window.addEventListener("auth:unauthorized", handleUnauthorized);
@@ -324,8 +316,6 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      setToken(storedToken);
-
       if (storedUser) {
         try {
           setUser(JSON.parse(storedUser));
@@ -347,7 +337,6 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
-        token,
 
         loading,
         isLoggingIn,
@@ -372,7 +361,6 @@ export function AuthProvider({ children }) {
         verifyEmailChange,
 
         setUser,
-        setToken,
       }}
     >
       {children}
