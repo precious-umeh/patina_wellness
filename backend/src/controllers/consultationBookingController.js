@@ -172,7 +172,7 @@ export async function createBooking(req, res) {
         html: bookingNotificationTemplate(booking),
       });
     } catch (error) {
-      console.error("AAdmin Booking Notification Error:", error);
+      console.error("Admin Booking Notification Error:", error);
     }
 
     return res.status(201).json({
